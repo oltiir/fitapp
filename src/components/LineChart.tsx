@@ -76,7 +76,12 @@ export default function LineChart({
           y={height - 4}
           fill="var(--dim)"
           fontSize="8.5"
-          textAnchor="middle"
+          // Anchor by position. Centring every label clips the ones at the plot
+          // edges against the viewBox — the last date rendered as "Jul 2"
+          // when it was really "Jul 27".
+          textAnchor={
+            px(t.x) <= PAD_L + 14 ? 'start' : px(t.x) >= W - PAD_R - 14 ? 'end' : 'middle'
+          }
         >
           {t.label}
         </text>

@@ -167,16 +167,20 @@ export default function SettingsScreen() {
         </div>
 
         <div className="spread">
-          <label htmlFor="pref-beep" style={{ margin: 0 }}>
-            Beep when rest ends
-          </label>
-          <input
-            id="pref-beep"
-            type="checkbox"
-            style={{ width: 24, minHeight: 24 }}
-            checked={settings.restBeepEnabled}
-            onChange={(e) => void saveSettings({ ...settings, restBeepEnabled: e.target.checked })}
-          />
+          <span>Beep when rest ends</span>
+          {/* A button rather than a checkbox: a native checkbox renders at
+              24x24, well under the 44px minimum for a reliable tap. */}
+          <button
+            className="btn btn-sm"
+            role="switch"
+            aria-checked={settings.restBeepEnabled}
+            aria-label="Beep when rest ends"
+            onClick={() =>
+              void saveSettings({ ...settings, restBeepEnabled: !settings.restBeepEnabled })
+            }
+          >
+            {settings.restBeepEnabled ? 'On' : 'Off'}
+          </button>
         </div>
       </div>
     </div>

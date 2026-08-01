@@ -292,6 +292,26 @@ describe('settings', () => {
     expect(await screen.findByText('0 / 4')).toBeTruthy()
   })
 
+  it('persists the rest-beep switch', async () => {
+    const user = userEvent.setup()
+    const first = render(<App />)
+    await openTab(user, 'Settings')
+
+    const beep = await screen.findByRole('switch', { name: 'Beep when rest ends' })
+    expect(beep.getAttribute('aria-checked')).toBe('true')
+    await user.click(beep)
+    expect(beep.getAttribute('aria-checked')).toBe('false')
+    first.unmount()
+
+    render(<App />)
+    await openTab(user, 'Settings')
+    expect(
+      (await screen.findByRole('switch', { name: 'Beep when rest ends' })).getAttribute(
+        'aria-checked',
+      ),
+    ).toBe('false')
+  })
+
   it('switching to lb converts displayed weights without touching storage', async () => {
     const user = userEvent.setup()
     render(<App />)
