@@ -97,7 +97,9 @@ export default function ExerciseProgress() {
             .reverse()
             .map((s) => {
               const done = entryFor(s, exerciseId)?.sets.filter((x) => x.done) ?? []
-              const isPr = pr !== null && s.date === pr.date
+              // Matched on session id, not date: two sessions on one day would
+              // otherwise both be badged as the PR.
+              const isPr = pr !== null && s.id === pr.sessionId
               return (
                 <div className="list-item" key={s.id}>
                   <div className="grow">{shortDate(s.date)}</div>

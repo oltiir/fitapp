@@ -15,8 +15,11 @@ const setStepper = async (
 ) => {
   await user.click(screen.getByRole('button', { name: label }))
   const input = screen.getByRole('textbox', { name: label })
-  await user.clear(input)
-  await user.type(input, `${value}{Enter}`)
+  // No clear(), and skipClick: tapping the value button mounts the input
+  // already focused with its contents selected, so typing replaces. Clearing
+  // first — or letting user-event click again, which collapses the selection —
+  // would hide an append-instead-of-replace regression.
+  await user.type(input, `${value}{Enter}`, { skipClick: true })
 }
 
 const openTab = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
@@ -138,6 +141,23 @@ describe('logging a workout', () => {
     ).toContain('82.5')
   })
 
+  it('replaces a prefilled weight when typed over, instead of appending to it', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await logABenchWorkout(user, '80')
+    await user.click(await screen.findByRole('button', { name: 'Push' }))
+    await screen.findByText('Barbell Bench Press')
+
+    // The field is prefilled with 80. Typing 85 must give 85, not 8085 —
+    // an appended value would be logged as a permanent, bogus PR.
+    await setStepper(user, 'Barbell Bench Press set 1 weight', '85')
+
+    const value = screen.getByRole('button', { name: 'Barbell Bench Press set 1 weight' })
+    expect(value.textContent).toContain('85')
+    expect(value.textContent).not.toContain('8085')
+  })
+
   it('survives a remount, because every change is written through to IndexedDB', async () => {
     const user = userEvent.setup()
     const first = render(<App />)
@@ -237,10 +257,11 @@ describe('progress', () => {
     const today = String(new Date().getDate())
     const attended = document.querySelectorAll('.cal .day.attended')
     expect(attended.length).toBe(1)
-    // The attended cell shows the split initial rather than the date number
-    expect(attended[0]!.textContent).toBe('P')
+    // The cell keeps its date and adds the split marker — dropping the date
+    // made attended days impossible to find by eye.
+    expect(attended[0]!.querySelector('.daynum')!.textContent).toBe(today)
+    expect(attended[0]!.querySelector('.marks')!.textContent).toBe('P')
     expect(screen.getByText(/P = push/)).toBeTruthy()
-    expect(today.length).toBeGreaterThan(0)
   })
 })
 

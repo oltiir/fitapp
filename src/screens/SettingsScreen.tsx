@@ -15,16 +15,35 @@ export default function SettingsScreen() {
 
   const { settings } = data
 
-  function exportBackup() {
+  async function exportBackup() {
     const now = new Date()
-    const blob = new Blob([serializeExport(data, now)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
+    const json = serializeExport(data, now)
+    const filename = backupFilename(now)
+    const markDone = () => saveSettings({ ...settings, lastBackupAt: now.toISOString() })
+
+    // Prefer the share sheet on iOS: a standalone PWA handles `<a download>`
+    // unreliably, and the sheet routes straight to "Save to Files", which is
+    // where the backup belongs anyway. Only fall back if sharing is unavailable.
+    const file = new File([json], filename, { type: 'application/json' })
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename })
+        await markDone()
+        return
+      } catch (e) {
+        // A cancelled share is not a backup — leave lastBackupAt alone.
+        if (e instanceof Error && e.name === 'AbortError') return
+        // Anything else: fall through to the download path below.
+      }
+    }
+
+    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url
-    a.download = backupFilename(now)
+    a.download = filename
     a.click()
     URL.revokeObjectURL(url)
-    void saveSettings({ ...settings, lastBackupAt: now.toISOString() })
+    await markDone()
   }
 
   async function onFilePicked(file: File) {
@@ -75,7 +94,11 @@ export default function SettingsScreen() {
           Your data lives only in this browser on this device. An export is the only copy that
           survives a lost phone.
         </p>
-        <button className="btn btn-primary" onClick={exportBackup} style={{ marginBottom: 8 }}>
+        <button
+          className="btn btn-primary"
+          onClick={() => void exportBackup()}
+          style={{ marginBottom: 8 }}
+        >
           Export backup
         </button>
         <button className="btn" onClick={() => fileRef.current?.click()}>

@@ -33,6 +33,16 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Without this, buttons fall back to the UA's default `buttontext` colour —
+   near-black on a dark theme, which makes most of the app unreadable. */
+button {
+  font: inherit;
+  color: var(--text);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .app {
   display: flex;
   flex-direction: column;
@@ -307,17 +317,31 @@ select {
   font-weight: 400;
 }
 
+/* Two rows per set. One row cannot work: at 390px the row leaves each stepper
+   115px, and two 46px +/- buttons eat all but 23px of that — not enough to
+   render "82.5 kg". Giving the steppers a full-width row of their own yields
+   ~67px of number, which holds a three-digit weight plus its unit. */
 .set-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  margin-bottom: 14px;
+}
+.set-head {
   display: flex;
   align-items: center;
+  min-width: 0;
+}
+.set-inputs {
+  grid-column: 1 / -1;
+  display: flex;
   gap: 8px;
-  margin-bottom: 8px;
 }
 .set-num {
-  width: 24px;
-  flex: 0 0 24px;
   color: var(--dim);
-  font-size: 13px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 .check-btn {
   width: 46px;
@@ -540,4 +564,25 @@ select {
   color: var(--gold);
   font-size: 11px;
   margin-left: 6px;
+}
+.cal .day .daynum {
+  font-size: 10px;
+  opacity: 0.65;
+  line-height: 1;
+}
+.cal .day .marks {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 11px;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.cal .day.attended .daynum {
+  opacity: 0.85;
+}
+.nudge .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }

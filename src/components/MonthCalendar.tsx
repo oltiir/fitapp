@@ -107,14 +107,17 @@ function WeekRow({ week }: { week: (Cell | null)[] }) {
             className={`day${cell.attended ? ' attended' : ''}${cell.future ? ' future' : ''}`}
             key={cell.iso}
           >
-            <span>
+            {/* The date always shows: replacing it with the split initial made
+                attended days impossible to locate by date. */}
+            <span className="daynum">{cell.day}</span>
+            <span className="marks">
               {cell.splits.length > 0
                 ? cell.splits.map((s) => SPLIT_INITIAL[s]).join('')
                 : cell.attended
                   ? '•'
-                  : cell.day}
+                  : ''}
+              {cell.hasRun && <span className="run">R</span>}
             </span>
-            {cell.hasRun && <span className="run">R</span>}
           </div>
         ),
       )}

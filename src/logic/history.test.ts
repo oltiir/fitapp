@@ -134,6 +134,14 @@ describe('personalRecord', () => {
   it('returns null with no history', () => {
     expect(personalRecord([], 'bench')).toBeNull()
   })
+
+  it('identifies the session that produced it, so same-day sessions are distinguishable', () => {
+    const older = session('2026-08-01', [{ exerciseId: 'bench', sets: [set(80, 8)] }])
+    const newer = session('2026-08-01', [{ exerciseId: 'bench', sets: [set(90, 8)] }])
+    const pr = personalRecord([older, newer], 'bench')
+    expect(pr!.sessionId).toBe(newer.id)
+    expect(pr!.date).toBe(older.date) // same date — the id is what separates them
+  })
 })
 
 describe('finishedSessions', () => {

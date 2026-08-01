@@ -12,6 +12,8 @@ export interface PersonalRecord {
   weightKg: number
   reps: number
   date: ISODate
+  /** Which session produced it — two sessions can share a date. */
+  sessionId: string
   e1rm: number
 }
 
@@ -55,7 +57,15 @@ export function personalRecord(sessions: Session[], exerciseId: string): Persona
       const score = e1rm(s.weightKg, s.reps)
       const better =
         best === null || score > best.e1rm || (score === best.e1rm && s.weightKg > best.weightKg)
-      if (better) best = { weightKg: s.weightKg, reps: s.reps, date: session.date, e1rm: score }
+      if (better) {
+        best = {
+          weightKg: s.weightKg,
+          reps: s.reps,
+          date: session.date,
+          sessionId: session.id,
+          e1rm: score,
+        }
+      }
     }
   }
   return best

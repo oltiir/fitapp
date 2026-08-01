@@ -29,6 +29,21 @@ export default function SessionScreen({
     if (!session) onExit()
   }, [session, onExit])
 
+  // Resuming a session left open for hours would otherwise show a "Rest done"
+  // bar for a rest that ended long ago. Clear anything stale on open only —
+  // clearing continuously would yank the bar away seconds after a real rest.
+  const staleRest =
+    session?.restStartedAt != null &&
+    session.restSeconds != null &&
+    (Date.now() - new Date(session.restStartedAt).getTime()) / 1000 > session.restSeconds + 300
+  useEffect(() => {
+    if (session && staleRest) {
+      void saveSession({ ...session, restStartedAt: null, restSeconds: null })
+    }
+    // Deliberately keyed on the session id alone: this is an on-open cleanup.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId])
+
   if (!session) return null
 
   // Arrow consts rather than function declarations: declarations hoist above the
@@ -99,8 +114,12 @@ export default function SessionScreen({
     setAdding(false)
   }
 
-  const dropExercise = (entryIndex: number) =>
+  const dropExercise = (entryIndex: number) => {
+    // Removing an exercise that has completed sets throws away logged work.
+    const logged = session.entries[entryIndex]!.sets.filter((s) => s.done).length
+    if (logged > 0 && !confirm(`Remove this exercise? ${logged} logged set(s) will be lost.`)) return
     patch({ ...session, entries: session.entries.filter((_, i) => i !== entryIndex) })
+  }
 
   const finish = () => {
     patch({
@@ -174,22 +193,9 @@ export default function SessionScreen({
 
             {entry.sets.map((s, setIndex) => (
               <div className="set-row" key={setIndex}>
-                <span className="set-num mono">{setIndex + 1}</span>
-                <Stepper
-                  ariaLabel={`${nameOf(entry.exerciseId)} set ${setIndex + 1} weight`}
-                  value={Math.round(toDisplayWeight(s.weightKg, unit) * 100) / 100}
-                  step={stepFor(entry.exerciseId)}
-                  suffix={unit}
-                  onChange={(v) =>
-                    editSet(entryIndex, setIndex, { weightKg: fromDisplayWeight(v, unit) })
-                  }
-                />
-                <Stepper
-                  ariaLabel={`${nameOf(entry.exerciseId)} set ${setIndex + 1} reps`}
-                  value={s.reps}
-                  step={1}
-                  onChange={(v) => editSet(entryIndex, setIndex, { reps: Math.round(v) })}
-                />
+                <div className="set-head">
+                  <span className="set-num">Set {setIndex + 1}</span>
+                </div>
                 <button
                   className="check-btn"
                   data-done={s.done}
@@ -200,6 +206,24 @@ export default function SessionScreen({
                 >
                   {s.done ? '✓' : '○'}
                 </button>
+                <div className="set-inputs">
+                  <Stepper
+                    ariaLabel={`${nameOf(entry.exerciseId)} set ${setIndex + 1} weight`}
+                    value={Math.round(toDisplayWeight(s.weightKg, unit) * 100) / 100}
+                    step={stepFor(entry.exerciseId)}
+                    suffix={unit}
+                    onChange={(v) =>
+                      editSet(entryIndex, setIndex, { weightKg: fromDisplayWeight(v, unit) })
+                    }
+                  />
+                  <Stepper
+                    ariaLabel={`${nameOf(entry.exerciseId)} set ${setIndex + 1} reps`}
+                    value={s.reps}
+                    step={1}
+                    suffix="reps"
+                    onChange={(v) => editSet(entryIndex, setIndex, { reps: Math.round(v) })}
+                  />
+                </div>
               </div>
             ))}
 

@@ -19,11 +19,14 @@ export default function RestBar({
   onSkip: () => void
   withTabs?: boolean
 }) {
-  useTicker(250, session.restStartedAt !== null)
-
   const now = new Date()
   const remaining = restRemaining(session.restStartedAt, session.restSeconds, now)
   const justFinished = restJustFinished(session.restStartedAt, session.restSeconds, now)
+
+  // Tick only while the timer is actually counting. Ticking on past zero would
+  // re-render four times a second for the rest of the workout, for a display
+  // that never changes again — real battery cost in a gym session.
+  useTicker(250, remaining !== null && remaining > 0)
 
   // One beep per rest period. The ticker fires ~8 times inside the grace window,
   // and re-mounting the bar must not replay a beep for a period already announced.

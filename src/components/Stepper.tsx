@@ -43,6 +43,10 @@ export default function Stepper({
           inputMode="decimal"
           aria-label={ariaLabel}
           autoFocus
+          // Select the existing value so typing replaces it. Without this the
+          // caret lands after the prefilled number and typing 85 over 80 gives
+          // 8085 — which silently becomes a permanent, bogus PR.
+          onFocus={(e) => e.currentTarget.select()}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commit}

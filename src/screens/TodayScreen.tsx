@@ -50,7 +50,11 @@ export default function TodayScreen({
     settings.lastBackupAt === null
       ? null
       : daysBetween(toISODate(new Date(settings.lastBackupAt)), today)
-  const backupStale = backupAgeDays === null || backupAgeDays > 30
+  // Nothing logged yet means nothing to lose — nagging about backups on a fresh
+  // install is pure noise.
+  const hasData =
+    data.sessions.length > 0 || data.bodyweights.length > 0 || data.runs.length > 0
+  const backupStale = hasData && (backupAgeDays === null || backupAgeDays > 30)
 
   async function startSplit(split: Split) {
     // Unlock audio on this real user gesture — iOS will not start an AudioContext

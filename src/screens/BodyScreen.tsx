@@ -84,9 +84,11 @@ export default function BodyScreen() {
             </div>
           </div>
         )}
-        <div className="sub" style={{ marginTop: 8 }}>
-          Dots are individual weigh-ins; the line is the 7-day average.
-        </div>
+        {trend.length > 0 && (
+          <div className="sub" style={{ marginTop: 8 }}>
+            Dots are individual weigh-ins; the line is the 7-day average.
+          </div>
+        )}
       </div>
 
       <button className="btn" onClick={() => setAddingWeight(true)}>
