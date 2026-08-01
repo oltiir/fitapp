@@ -92,8 +92,9 @@ describe('logging a workout', () => {
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'mark Barbell Bench Press set 1 done' }))
 
-    // Bench seeds a 180s rest
-    expect(await screen.findByText(/3:00|2:5\d/)).toBeTruthy()
+    // Rest now defaults to 60s everywhere. Matched on the clock glyph so this
+    // hits the running timer, not the "rest 1:00" chip that sets the duration.
+    expect(await screen.findByText(/⏱ (1:00|0:5\d)/)).toBeTruthy()
     expect(screen.getByRole('button', { name: '+30s' })).toBeTruthy()
   })
 
@@ -103,10 +104,44 @@ describe('logging a workout', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Start Push' }))
     await screen.findByText('Barbell Bench Press')
+    await setStepper(user, 'Barbell Bench Press set 1 reps', '8')
     await user.click(screen.getByRole('button', { name: 'mark Barbell Bench Press set 1 done' }))
     await user.click(await screen.findByRole('button', { name: 'Skip' }))
 
     expect(screen.queryByRole('button', { name: '+30s' })).toBeNull()
+  })
+
+  it('refuses to complete a set with no reps entered', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Start Push' }))
+    await screen.findByText('Barbell Bench Press')
+
+    // A 0-rep set is meaningless and would pollute history and PRs.
+    const doneBtn = screen.getByRole('button', { name: 'mark Barbell Bench Press set 1 done' })
+    expect((doneBtn as HTMLButtonElement).disabled).toBe(true)
+    await user.click(doneBtn)
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull()
+
+    await setStepper(user, 'Barbell Bench Press set 1 reps', '5')
+    expect((doneBtn as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('keeps the exercise open after its last set, instead of jumping away', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Start Push' }))
+    await screen.findByText('Barbell Bench Press')
+
+    await setStepper(user, 'Barbell Bench Press set 1 reps', '8')
+    await user.click(screen.getByRole('button', { name: 'mark Barbell Bench Press set 1 done' }))
+
+    // Bench has no unfinished sets now, but you may well want another one.
+    expect(screen.getByRole('button', { expanded: true }).textContent).toContain(
+      'Barbell Bench Press',
+    )
+    expect(screen.getByText('All 1 sets done')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '+ set' })).toBeTruthy()
   })
 
   it('records the session and advances the rotation on finish', async () => {
@@ -134,7 +169,7 @@ describe('logging a workout', () => {
     await logABenchWorkout(user, '82.5')
     await user.click(await screen.findByRole('button', { name: 'Push' }))
 
-    expect(await screen.findByText(/last time · 0d ago · 82.5 × 8/)).toBeTruthy()
+    expect(await screen.findByText(/last 0d ago · 82.5 × 8/)).toBeTruthy()
     expect(
       (screen.getByRole('button', { name: 'Barbell Bench Press set 1 weight' }) as HTMLElement)
         .textContent,
@@ -156,6 +191,45 @@ describe('logging a workout', () => {
     const value = screen.getByRole('button', { name: 'Barbell Bench Press set 1 weight' })
     expect(value.textContent).toContain('85')
     expect(value.textContent).not.toContain('8085')
+  })
+
+  it('expands only one exercise at a time, and follows a tap to another', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Start Push' }))
+    await screen.findByText('Barbell Bench Press')
+
+    // Bench is first and unfinished, so it opens by default; nothing else does.
+    expect(screen.getByRole('button', { expanded: true }).textContent).toContain(
+      'Barbell Bench Press',
+    )
+    expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: 'Cable Lateral Raise set 1 weight' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: /Cable Lateral Raise/ }))
+    expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(1)
+    expect(screen.getByRole('button', { expanded: true }).textContent).toContain(
+      'Cable Lateral Raise',
+    )
+    // The steppers moved with it.
+    expect(screen.getByRole('button', { name: 'Cable Lateral Raise set 1 weight' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Barbell Bench Press set 1 weight' })).toBeNull()
+  })
+
+  it('retunes and remembers an exercise’s rest from the chip', async () => {
+    const user = userEvent.setup()
+    const first = render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Start Push' }))
+    await screen.findByText('Barbell Bench Press')
+
+    await user.click(screen.getByRole('button', { name: /rest 60 seconds/ }))
+    expect(screen.getByRole('button', { name: /rest 90 seconds/ })).toBeTruthy()
+
+    // Persisted to the exercise, so the next workout starts from the new value.
+    first.unmount()
+    render(<App />)
+    await user.click(await screen.findByRole('button', { name: 'Resume' }))
+    expect(await screen.findByRole('button', { name: /rest 90 seconds/ })).toBeTruthy()
   })
 
   it('survives a remount, because every change is written through to IndexedDB', async () => {

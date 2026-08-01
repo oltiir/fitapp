@@ -5,7 +5,8 @@ import TemplateEditor from '../components/TemplateEditor'
 import ExerciseEditor from '../components/ExerciseEditor'
 import { backupFilename, ImportError, parseImport, serializeExport } from '../logic/backup'
 import { daysBetween, toISODate, todayISO } from '../logic/dates'
-import { SPLIT_LABEL, SPLITS, type Split } from '../types'
+import { seedData } from '../logic/seed'
+import { DEFAULT_SETTINGS, SPLIT_LABEL, SPLITS, type Split } from '../types'
 
 export default function SettingsScreen() {
   const { data, saveSettings, importData } = useStore()
@@ -44,6 +45,22 @@ export default function SettingsScreen() {
     a.click()
     URL.revokeObjectURL(url)
     await markDone()
+  }
+
+  /** Two confirmations, because this is unrecoverable and sits in a settings list. */
+  async function resetEverything() {
+    if (!confirm('Reset all data?\n\nEvery workout, weigh-in and run will be deleted.')) return
+    if (!confirm('Really delete everything? This cannot be undone.')) return
+    const seed = seedData(new Date())
+    await importData({
+      exercises: seed.exercises,
+      templates: seed.templates,
+      sessions: [],
+      bodyweights: [],
+      runs: [],
+      visits: [],
+      settings: { ...DEFAULT_SETTINGS, unit: settings.unit, weeklyTarget: settings.weeklyTarget },
+    })
   }
 
   async function onFilePicked(file: File) {
@@ -116,6 +133,17 @@ export default function SettingsScreen() {
           }}
         />
         {importErr && <div className="err">{importErr}</div>}
+      </div>
+
+      <h2>Reset</h2>
+      <div className="card">
+        <p className="sub" style={{ marginTop: 0 }}>
+          Wipes every workout, weigh-in and run, and restores the default Push/Pull/Legs
+          templates. There is no undo — export a backup first if you might want any of it.
+        </p>
+        <button className="btn btn-danger" onClick={() => void resetEverything()}>
+          Reset all data
+        </button>
       </div>
 
       <h2>Workout templates</h2>

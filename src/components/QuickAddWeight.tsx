@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Modal from './Modal'
+import Sheet from './Sheet'
 import { useStore } from '../store/StoreContext'
 import { newId } from '../logic/id'
 import { todayISO } from '../logic/dates'
@@ -32,7 +32,11 @@ export default function QuickAddWeight({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Log bodyweight" onClose={onClose}>
+    <Sheet
+      title="Log bodyweight"
+      onClose={onClose}
+      primary={{ label: 'Save', onClick: save, disabled: !valid }}
+    >
       <div className="field">
         <label htmlFor="bw-value">Weight ({unit})</label>
         <input
@@ -42,11 +46,9 @@ export default function QuickAddWeight({ onClose }: { onClose: () => void }) {
           autoFocus
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onFocus={(e) => e.currentTarget.select()}
         />
       </div>
-      <button className="btn btn-primary" disabled={!valid} onClick={save}>
-        Save
-      </button>
-    </Modal>
+    </Sheet>
   )
 }

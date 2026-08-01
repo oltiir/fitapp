@@ -3,10 +3,10 @@
 A personal Push/Pull/Legs training log, built to be installed on an iPhone home screen and used as an app. Single user, no accounts, no server, fully offline.
 
 - **Today** — did I train today, am I on pace for my weekly target, which split is next, days since each split, quick-add for runs and bodyweight
-- **Session** — per-set logging prefilled from last time, big steppers so the keyboard rarely opens, automatic rest timer per exercise
+- **Session** — the whole workout on one screen as an accordion: one line per exercise, only the one you're on expanded. Sets prefill from last time, the rest timer runs inline right above the Done button, and a tap on the rest chip retunes that exercise (45s…3min) and remembers it.
 - **Progress** — last-session recaps, per-exercise charts, PR list, consistency calendar
 - **Body** — bodyweight with a 7-day rolling average and 4-week delta, run history with pace
-- **Settings** — edit the three templates and the exercise list, export/import a backup
+- **Settings** — edit the three templates and the exercise list, export/import a backup, reset all data
 
 ## Read this before you rely on it
 

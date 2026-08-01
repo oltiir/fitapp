@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useStore } from '../store/StoreContext'
-import Modal from './Modal'
+import Sheet from './Sheet'
 import { newId } from '../logic/id'
 import { formatDuration, fromDisplayWeight, toDisplayWeight } from '../logic/units'
 import type { Exercise, Settings } from '../types'
 
-function ExerciseModal({
+function ExerciseSheet({
   exercise,
   unit,
   onSave,
@@ -37,7 +37,11 @@ function ExerciseModal({
   }
 
   return (
-    <Modal title={exercise.name ? 'Edit exercise' : 'New exercise'} onClose={onClose}>
+    <Sheet
+      title={exercise.name ? 'Edit exercise' : 'New exercise'}
+      onClose={onClose}
+      primary={{ label: 'Save', onClick: save, disabled: !valid }}
+    >
       <div className="field">
         <label htmlFor="ex-name">Name</label>
         <input id="ex-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
@@ -62,10 +66,7 @@ function ExerciseModal({
           onChange={(e) => setIncrement(e.target.value)}
         />
       </div>
-      <button className="btn btn-primary" disabled={!valid} onClick={save}>
-        Save
-      </button>
-    </Modal>
+    </Sheet>
   )
 }
 
@@ -158,7 +159,7 @@ export default function ExerciseEditor() {
       )}
 
       {editing && (
-        <ExerciseModal
+        <ExerciseSheet
           exercise={editing}
           unit={unit}
           onSave={(e) => void saveExercise(e)}

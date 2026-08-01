@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Modal from './Modal'
+import Sheet from './Sheet'
 import { useStore } from '../store/StoreContext'
 import { newId } from '../logic/id'
 import { todayISO } from '../logic/dates'
@@ -15,9 +15,7 @@ export default function QuickAddRun({ onClose }: { onClose: () => void }) {
   const durationSec = (Number(min) || 0) * 60 + (Number(sec) || 0)
   const valid = Number.isFinite(distanceKm) && distanceKm > 0 && durationSec > 0
 
-  const pace = valid
-    ? paceSecPerKm({ id: '', date: '', distanceKm, durationSec })
-    : null
+  const pace = valid ? paceSecPerKm({ id: '', date: '', distanceKm, durationSec }) : null
 
   function save() {
     void saveRun({ id: newId(), date: todayISO(new Date()), distanceKm, durationSec })
@@ -25,7 +23,11 @@ export default function QuickAddRun({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="Log run" onClose={onClose}>
+    <Sheet
+      title="Log run"
+      onClose={onClose}
+      primary={{ label: 'Save', onClick: save, disabled: !valid }}
+    >
       <div className="field">
         <label htmlFor="run-km">Distance (km)</label>
         <input
@@ -59,12 +61,11 @@ export default function QuickAddRun({ onClose }: { onClose: () => void }) {
           />
         </div>
       </div>
-      <div className="sub mono" style={{ marginBottom: 12 }}>
-        {pace === null ? 'Pace appears once distance and time are set' : `→ pace ${formatPace(pace)} /km`}
+      <div className="sub mono">
+        {pace === null
+          ? 'Pace appears once distance and time are set'
+          : `→ pace ${formatPace(pace)} /km`}
       </div>
-      <button className="btn btn-primary" disabled={!valid} onClick={save}>
-        Save
-      </button>
-    </Modal>
+    </Sheet>
   )
 }

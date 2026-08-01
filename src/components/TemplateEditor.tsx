@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/StoreContext'
-import Modal from './Modal'
+import Sheet from './Sheet'
 import { SPLIT_LABEL, type Split } from '../types'
 
 export default function TemplateEditor({ split }: { split: Split }) {
@@ -75,14 +75,14 @@ export default function TemplateEditor({ split }: { split: Split }) {
       </button>
 
       {picking && (
-        <Modal title={`Add to ${SPLIT_LABEL[split]}`} onClose={() => setPicking(false)}>
+        <Sheet title={`Add to ${SPLIT_LABEL[split]}`} onClose={() => setPicking(false)}>
           {addable.length === 0 ? (
             <div className="empty">Every exercise is already in this template.</div>
           ) : (
             addable.map((e) => (
               <button
                 key={e.id}
-                className="btn btn-ghost"
+                className="btn"
                 style={{ marginBottom: 8, justifyContent: 'flex-start' }}
                 onClick={() => {
                   write([...ids, e.id])
@@ -93,7 +93,7 @@ export default function TemplateEditor({ split }: { split: Split }) {
               </button>
             ))
           )}
-        </Modal>
+        </Sheet>
       )}
     </>
   )

@@ -47,6 +47,7 @@ button {
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding-top: env(safe-area-inset-top);
 }
 
 .screen {
@@ -188,23 +189,51 @@ select {
   font-size: 14px;
 }
 
-.modal-backdrop {
+.sheet {
   position: fixed;
   inset: 0;
-  z-index: 50;
-  background: rgba(0, 0, 0, 0.6);
+  z-index: 100;
+  background: var(--bg);
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
 }
-.modal {
-  background: var(--surface);
-  border-top: 1px solid var(--line);
-  border-radius: var(--radius) var(--radius) 0 0;
-  padding: var(--pad);
-  padding-bottom: calc(var(--pad) + env(safe-area-inset-bottom));
-  width: 100%;
-  max-height: 85vh;
+.sheet-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.sheet-title {
+  font-size: 16px;
+  white-space: nowrap;
+}
+.sheet-action {
+  min-height: 44px;
+  padding: 0 10px;
+  background: none;
+  border: 0;
+  color: var(--dim);
+  font-size: 16px;
+  text-align: left;
+}
+.sheet-action.primary {
+  color: var(--accent);
+  font-weight: 700;
+  text-align: right;
+  justify-self: end;
+}
+.sheet-action.primary:disabled {
+  color: var(--dim);
+  opacity: 0.5;
+}
+.sheet-body {
+  flex: 1;
   overflow-y: auto;
+  padding: var(--pad);
+  padding-bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 40px);
 }
 .field {
   margin-bottom: 12px;
@@ -317,32 +346,6 @@ select {
   font-weight: 400;
 }
 
-/* Two rows per set. One row cannot work: at 390px the row leaves each stepper
-   115px, and two 46px +/- buttons eat all but 23px of that — not enough to
-   render "82.5 kg". Giving the steppers a full-width row of their own yields
-   ~67px of number, which holds a three-digit weight plus its unit. */
-.set-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 8px;
-  margin-bottom: 14px;
-}
-.set-head {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-.set-inputs {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: 8px;
-}
-.set-num {
-  color: var(--dim);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
 .check-btn {
   width: 46px;
   min-height: 46px;
@@ -370,44 +373,6 @@ select {
   font-size: 13px;
   color: var(--dim);
   font-variant-numeric: tabular-nums;
-}
-
-.restbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  background: var(--surface-2);
-  border-top: 1px solid var(--line);
-  padding: 10px var(--pad) 12px;
-  z-index: 20;
-}
-.restbar.no-tabs {
-  bottom: 0;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
-}
-.restbar-track {
-  height: 4px;
-  background: var(--line);
-  border-radius: 2px;
-  margin-top: 8px;
-  overflow: hidden;
-}
-.restbar-fill {
-  height: 100%;
-  background: var(--accent);
-  transition: width 0.25s linear;
-}
-.restbar-time {
-  font-size: 20px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.restbar.done .restbar-time {
-  color: var(--good);
-}
-.restbar.done .restbar-fill {
-  background: var(--good);
 }
 
 .sticky-head {
@@ -585,4 +550,236 @@ select {
 .nudge .btn {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+/* ── Workout accordion ───────────────────────────────────────────────────── */
+.wk-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bg);
+  padding: 6px 0 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+}
+.wk-head .elapsed {
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.ex {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.ex.open {
+  border-color: #3a4654;
+  background: var(--surface);
+}
+
+.ex-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 12px;
+  background: none;
+  border: 0;
+  text-align: left;
+}
+.ex-row .mark {
+  width: 22px;
+  flex: 0 0 22px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--dim);
+}
+.ex-row .mark.done {
+  color: var(--good);
+}
+.ex-row .mark.part {
+  color: var(--accent);
+}
+.ex-row .nm {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ex.open .ex-row .nm {
+  white-space: normal;
+  font-size: 17px;
+}
+.ex-row .sm {
+  font-size: 13px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ex-body {
+  padding: 0 12px 12px;
+}
+.ex-last {
+  font-size: 13px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  margin: -2px 0 10px 32px;
+}
+
+.done-set {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.done-set .tick {
+  color: var(--good);
+  width: 20px;
+}
+.done-set .lbl {
+  flex: 1;
+  text-align: left;
+  color: var(--dim);
+  font-size: 13px;
+}
+.done-set .val {
+  font-weight: 600;
+}
+
+.cur-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.rest-chip {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--dim);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cur-inputs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.do-set {
+  width: 100%;
+  min-height: 56px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--good);
+  color: #04180f;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.do-set:active {
+  filter: brightness(0.92);
+}
+
+.rest-inline {
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  padding: 10px 12px 12px;
+  margin-bottom: 10px;
+}
+.rest-inline.over {
+  border-color: var(--good);
+}
+.rest-inline .t {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.rest-inline.over .t {
+  color: var(--good);
+}
+.rest-track {
+  height: 5px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 8px 0 10px;
+}
+.rest-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}
+.rest-inline.over .rest-fill {
+  background: var(--good);
+}
+.rest-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.rest-actions button {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ex-foot {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ex-foot button {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+.ex-foot button.next {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.do-set:disabled {
+  background: var(--surface-2);
+  color: var(--dim);
+}
+.ex-foot button.drop {
+  flex: 0 0 auto;
+  padding: 0 14px;
+  color: var(--dim);
+  font-weight: 500;
+  background: none;
 }
