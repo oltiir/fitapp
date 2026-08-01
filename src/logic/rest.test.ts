@@ -1,4 +1,4 @@
-import { restRemaining } from './rest'
+import { restRemaining, restJustFinished } from './rest'
 
 describe('restRemaining', () => {
   const started = '2026-08-01T18:00:00.000Z'
@@ -27,5 +27,35 @@ describe('restRemaining', () => {
 
   it('rounds up so 0 only appears when the timer is genuinely done', () => {
     expect(restRemaining(started, 180, new Date('2026-08-01T18:02:59.500Z'))).toBe(1)
+  })
+})
+
+describe('restJustFinished', () => {
+  const started = '2026-08-01T18:00:00.000Z'
+
+  it('is false while the timer is still running', () => {
+    expect(restJustFinished(started, 180, new Date('2026-08-01T18:02:00.000Z'))).toBe(false)
+  })
+
+  it('is true at the moment it hits zero', () => {
+    expect(restJustFinished(started, 180, new Date('2026-08-01T18:03:00.000Z'))).toBe(true)
+  })
+
+  it('is true just inside the grace window', () => {
+    expect(restJustFinished(started, 180, new Date('2026-08-01T18:03:01.500Z'))).toBe(true)
+  })
+
+  it('is false once the grace window has passed, so a backgrounded app never beeps late', () => {
+    expect(restJustFinished(started, 180, new Date('2026-08-01T18:03:02.500Z'))).toBe(false)
+    expect(restJustFinished(started, 180, new Date('2026-08-01T18:07:00.000Z'))).toBe(false)
+  })
+
+  it('is false when no timer is running', () => {
+    expect(restJustFinished(null, null, new Date('2026-08-01T18:03:00.000Z'))).toBe(false)
+    expect(restJustFinished(started, null, new Date('2026-08-01T18:03:00.000Z'))).toBe(false)
+  })
+
+  it('respects a custom grace window', () => {
+    expect(restJustFinished(started, 180, new Date('2026-08-01T18:03:04.000Z'), 5)).toBe(true)
   })
 })

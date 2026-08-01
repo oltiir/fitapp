@@ -2,11 +2,12 @@ import {
   toDisplayWeight,
   fromDisplayWeight,
   formatWeight,
+  formatSetSummary,
   paceSecPerKm,
   formatPace,
   formatDuration,
 } from './units'
-import type { Run } from '../types'
+import type { Run, SetEntry } from '../types'
 
 describe('weight conversion', () => {
   it('is identity in kg', () => {
@@ -30,6 +31,30 @@ describe('weight conversion', () => {
 
   it('formats lb in lb', () => {
     expect(formatWeight(100, 'lb')).toBe('220.5 lb')
+  })
+})
+
+describe('formatSetSummary', () => {
+  const set = (weightKg: number, reps: number): SetEntry => ({ weightKg, reps, done: true })
+
+  it('collapses a shared weight into one figure', () => {
+    expect(formatSetSummary([set(80, 8), set(80, 8), set(80, 7)], 'kg')).toBe('80 × 8,8,7')
+  })
+
+  it('spells out each set when the weight changes', () => {
+    expect(formatSetSummary([set(80, 8), set(85, 5)], 'kg')).toBe('80×8, 85×5')
+  })
+
+  it('handles a single set', () => {
+    expect(formatSetSummary([set(82.5, 8)], 'kg')).toBe('82.5 × 8')
+  })
+
+  it('returns a dash for no sets', () => {
+    expect(formatSetSummary([], 'kg')).toBe('—')
+  })
+
+  it('converts to the display unit', () => {
+    expect(formatSetSummary([set(100, 5)], 'lb')).toBe('220.5 × 5')
   })
 })
 

@@ -1,4 +1,4 @@
-import type { Run, Settings } from '../types'
+import type { Run, SetEntry, Settings } from '../types'
 
 export const KG_PER_LB = 0.45359237
 
@@ -14,6 +14,26 @@ export function formatWeight(kg: number, unit: Settings['unit']): string {
   const value = toDisplayWeight(kg, unit)
   const rounded = Math.round(value * 10) / 10
   return `${rounded}`.replace(/\.0$/, '') + ` ${unit}`
+}
+
+function displayNumber(kg: number, unit: Settings['unit']): string {
+  const rounded = Math.round(toDisplayWeight(kg, unit) * 10) / 10
+  return `${rounded}`
+}
+
+/**
+ * How a set list reads at a glance: `80 × 8,8,7` when the weight held, or
+ * `80×8, 85×5` when it changed. The collapsed form is the common case and the
+ * one worth optimising, since straight sets are what the app is built around.
+ */
+export function formatSetSummary(sets: SetEntry[], unit: Settings['unit']): string {
+  const first = sets[0]
+  if (!first) return '—'
+  const sameWeight = sets.every((s) => s.weightKg === first.weightKg)
+  if (sameWeight) {
+    return `${displayNumber(first.weightKg, unit)} × ${sets.map((s) => s.reps).join(',')}`
+  }
+  return sets.map((s) => `${displayNumber(s.weightKg, unit)}×${s.reps}`).join(', ')
 }
 
 export function paceSecPerKm(run: Run): number | null {
