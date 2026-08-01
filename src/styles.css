@@ -454,3 +454,30 @@ select {
   gap: 10px;
   justify-content: space-between;
 }
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.stat {
+  display: flex;
+  gap: 20px;
+  margin-top: 10px;
+}
+.stat .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dim);
+}
+.stat .value {
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.down {
+  color: var(--good);
+}
+.up {
+  color: var(--warn);
+}
