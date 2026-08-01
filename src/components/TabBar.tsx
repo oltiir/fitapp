@@ -14,9 +14,12 @@ export default function TabBar({ active, onChange }: { active: Tab; onChange: (t
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
+          aria-label={t.label}
           aria-current={active === t.id ? 'page' : undefined}
         >
-          <span className="glyph">{t.glyph}</span>
+          <span className="glyph" aria-hidden="true">
+            {t.glyph}
+          </span>
           {t.label}
         </button>
       ))}

@@ -193,7 +193,9 @@ export default function SessionScreen({
                 <button
                   className="check-btn"
                   data-done={s.done}
-                  aria-label={`mark set ${setIndex + 1} ${s.done ? 'not done' : 'done'}`}
+                  aria-label={`mark ${nameOf(entry.exerciseId)} set ${setIndex + 1} ${
+                    s.done ? 'not done' : 'done'
+                  }`}
                   onClick={() => toggleSet(entryIndex, setIndex)}
                 >
                   {s.done ? '✓' : '○'}

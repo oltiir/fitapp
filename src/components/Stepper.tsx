@@ -41,6 +41,7 @@ export default function Stepper({
           className="stepper-input"
           type="text"
           inputMode="decimal"
+          aria-label={ariaLabel}
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

@@ -127,18 +127,20 @@ export default function SettingsScreen() {
 
         <div className="field">
           <label htmlFor="pref-target">Sessions per week target</label>
-          <input
+          {/* A select rather than a number field: a controlled text input rejects
+              its own intermediate states (an empty field is out of range), so the
+              value snaps back and typing appends instead of replacing. */}
+          <select
             id="pref-target"
-            type="text"
-            inputMode="numeric"
             value={String(settings.weeklyTarget)}
-            onChange={(e) => {
-              const n = Math.round(Number(e.target.value))
-              if (Number.isFinite(n) && n >= 1 && n <= 14) {
-                void saveSettings({ ...settings, weeklyTarget: n })
-              }
-            }}
-          />
+            onChange={(e) => void saveSettings({ ...settings, weeklyTarget: Number(e.target.value) })}
+          >
+            {Array.from({ length: 14 }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="spread">
