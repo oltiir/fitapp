@@ -35,7 +35,9 @@ function Shell() {
 
   return (
     <div className="app">
-      {tab === 'today' && <TodayScreen onOpenSession={setOpenSessionId} />}
+      {tab === 'today' && (
+        <TodayScreen onOpenSession={setOpenSessionId} onGoToSettings={() => setTab('settings')} />
+      )}
       {tab === 'progress' && <ProgressScreen />}
       {tab === 'body' && <BodyScreen />}
       {tab === 'settings' && <SettingsScreen />}

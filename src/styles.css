@@ -409,3 +409,48 @@ select {
 .status-card.attended {
   border-left-color: var(--good);
 }
+.dots {
+  display: flex;
+  gap: 7px;
+}
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+}
+.dot.filled {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.dot.filled.gold {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.gold-text {
+  color: var(--gold);
+}
+.since {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--dim);
+  margin-top: 10px;
+}
+.since .stale {
+  color: var(--gold);
+}
+.status-icon {
+  font-size: 20px;
+  margin-right: 8px;
+}
+.nudge {
+  border-color: var(--gold);
+  color: var(--gold);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
