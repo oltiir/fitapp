@@ -14,20 +14,17 @@ A personal Push/Pull/Legs training log, built to be installed on an iPhone home 
 
 1. **Launch it from the home-screen icon, not a Safari tab.** iOS clears site data for origins you haven't visited in about a week. Home-screen-installed PWAs are exempt; a bookmark in Safari is not.
 2. **An export is your only backup.** Settings → *Export backup* writes a JSON file; on iOS choose *Save to Files* to put it in iCloud Drive. The Today tab nags you when the last backup is over 30 days old. *Import backup* replaces everything currently in the app.
-3. **The deployed URL must never change.** IndexedDB is scoped per origin, so serving the app from a different domain or path gives you an empty app with none of your history. Pick the URL once and keep it.
+3. **This URL must never change:**
+
+   ## → https://oltiir.github.io/fitapp/
+
+   IndexedDB is scoped per origin, so serving the app from a different domain or path gives you an empty app with none of your history.
 
 ## Deploying
 
-Not yet deployed. Config for both routes is in the repo — pick one, then record the URL here.
+Deployed to **GitHub Pages** at https://oltiir.github.io/fitapp/. `.github/workflows/deploy.yml` runs the test suite and builds with `VITE_BASE=/fitapp/` on every push to `main`; Pages is configured with *Source: GitHub Actions*. The repository is public because Pages on a private repo requires a paid plan — the code is public, your training data is not: it never leaves your phone.
 
-**Vercel** (serves at the root, no extra config):
-
-```bash
-npx vercel login     # interactive, run it yourself
-npx vercel --prod
-```
-
-**GitHub Pages** (`.github/workflows/deploy.yml` builds with `VITE_BASE=/fitapp/`): requires the repository to be public, since Pages on a private repo needs a paid plan. Enable it with Settings → Pages → Source: GitHub Actions, then push to `main`.
+`vercel.json` is also committed if you ever want to move to Vercel instead. If you do, remember that the origin changes, so export a backup first and import it on the new URL.
 
 Either way it must be HTTPS — the service worker that makes the app work offline will not register otherwise.
 
