@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store/StoreContext'
 import Sheet from './Sheet'
+import Icon from './Icon'
 import { SPLIT_LABEL, type Split } from '../types'
 
 export default function TemplateEditor({ split }: { split: Split }) {
@@ -32,23 +33,23 @@ export default function TemplateEditor({ split }: { split: Split }) {
 
   return (
     <>
-      <div className="card">
-        {ids.length === 0 ? (
-          <div className="empty">No exercises in this template yet.</div>
-        ) : (
-          ids.map((id, i) => (
+      {ids.length === 0 ? (
+        <div className="empty">No exercises in this template yet.</div>
+      ) : (
+        <div className="list">
+          {ids.map((id, i) => (
             <div key={id} className="list-item">
-              <span className="sub mono" style={{ width: 18 }}>
+              <span className="tag-label num" style={{ width: 16 }}>
                 {i + 1}
               </span>
-              <div className="grow">{nameOf(id)}</div>
+              <div className="grow nm">{nameOf(id)}</div>
               <button
                 className="icon-btn"
                 aria-label={`move ${nameOf(id)} up`}
                 disabled={i === 0}
                 onClick={() => move(i, -1)}
               >
-                ↑
+                <Icon name="up" size={18} />
               </button>
               <button
                 className="icon-btn"
@@ -56,22 +57,23 @@ export default function TemplateEditor({ split }: { split: Split }) {
                 disabled={i === ids.length - 1}
                 onClick={() => move(i, 1)}
               >
-                ↓
+                <Icon name="down" size={18} />
               </button>
               <button
-                className="icon-btn btn-danger"
+                className="icon-btn danger"
                 aria-label={`remove ${nameOf(id)}`}
                 onClick={() => write(ids.filter((x) => x !== id))}
               >
-                ✕
+                <Icon name="close" size={18} />
               </button>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <button className="btn" onClick={() => setPicking(true)}>
-        + Add exercise to {SPLIT_LABEL[split]}
+      <button className="steel-btn" onClick={() => setPicking(true)}>
+        <Icon name="plus" size={19} />
+        Add to {SPLIT_LABEL[split]}
       </button>
 
       {picking && (
@@ -82,7 +84,7 @@ export default function TemplateEditor({ split }: { split: Split }) {
             addable.map((e) => (
               <button
                 key={e.id}
-                className="btn"
+                className="steel-btn"
                 style={{ marginBottom: 8, justifyContent: 'flex-start' }}
                 onClick={() => {
                   write([...ids, e.id])

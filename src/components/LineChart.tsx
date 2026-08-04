@@ -4,17 +4,21 @@ export interface Series {
   kind: 'line' | 'dots'
 }
 
-// Fixed internal coordinate space scaled by viewBox: the chart fills its card at
+// Fixed internal coordinate space scaled by viewBox: the chart fills its band at
 // any screen width with no measurement and no resize observer.
 const W = 320
-const PAD_L = 34
-const PAD_R = 6
-const PAD_T = 8
-const PAD_B = 18
+const PAD_L = 36
+const PAD_R = 8
+const PAD_T = 10
+const PAD_B = 20
 
+/**
+ * A chalk line drawn on the rubber ground. Deliberately unboxed: hairline rules
+ * for the scale, chalk for the plot, no frame, no fill, no rounded container.
+ */
 export default function LineChart({
   series,
-  height = 150,
+  height = 158,
   format = (v: number) => String(Math.round(v * 10) / 10),
   xLabels = [],
   emptyLabel = 'No data yet',
@@ -61,9 +65,17 @@ export default function LineChart({
             y1={py(v)}
             y2={py(v)}
             stroke="var(--line)"
-            strokeWidth="0.5"
+            strokeWidth="0.6"
           />
-          <text x="2" y={py(v) + 3.5} fill="var(--dim)" fontSize="8.5">
+          <text
+            x="2"
+            y={py(v) + 3.2}
+            fill="var(--steel)"
+            fontSize="9"
+            fontWeight="700"
+            fontFamily="var(--display)"
+            letterSpacing="0.06em"
+          >
             {format(v)}
           </text>
         </g>
@@ -73,9 +85,12 @@ export default function LineChart({
         <text
           key={i}
           x={px(t.x)}
-          y={height - 4}
-          fill="var(--dim)"
-          fontSize="8.5"
+          y={height - 5}
+          fill="var(--steel)"
+          fontSize="9"
+          fontWeight="700"
+          fontFamily="var(--display)"
+          letterSpacing="0.08em"
           // Anchor by position. Centring every label clips the ones at the plot
           // edges against the viewBox — the last date rendered as "Jul 2"
           // when it was really "Jul 27".
@@ -93,14 +108,15 @@ export default function LineChart({
             key={i}
             fill="none"
             stroke={s.color}
-            strokeWidth="1.8"
-            strokeLinejoin="round"
+            strokeWidth="2.2"
+            strokeLinejoin="miter"
+            strokeLinecap="square"
             points={s.points.map((p) => `${px(p.x)},${py(p.y)}`).join(' ')}
           />
         ) : (
           <g key={i}>
             {s.points.map((p, j) => (
-              <circle key={j} cx={px(p.x)} cy={py(p.y)} r="2.4" fill={s.color} />
+              <circle key={j} cx={px(p.x)} cy={py(p.y)} r="2.2" fill={s.color} />
             ))}
           </g>
         ),

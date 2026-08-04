@@ -1,10 +1,12 @@
+import Icon, { type IconName } from './Icon'
+
 export type Tab = 'today' | 'progress' | 'body' | 'settings'
 
-const TABS: { id: Tab; label: string; glyph: string }[] = [
-  { id: 'today', label: 'Today', glyph: '🏋' },
-  { id: 'progress', label: 'Progress', glyph: '📈' },
-  { id: 'body', label: 'Body', glyph: '⚖' },
-  { id: 'settings', label: 'Settings', glyph: '⚙' },
+const TABS: { id: Tab; label: string; icon: IconName }[] = [
+  { id: 'today', label: 'Today', icon: 'barbell' },
+  { id: 'progress', label: 'Progress', icon: 'chart' },
+  { id: 'body', label: 'Body', icon: 'torso' },
+  { id: 'settings', label: 'Settings', icon: 'bolt' },
 ]
 
 export default function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
@@ -17,9 +19,7 @@ export default function TabBar({ active, onChange }: { active: Tab; onChange: (t
           aria-label={t.label}
           aria-current={active === t.id ? 'page' : undefined}
         >
-          <span className="glyph" aria-hidden="true">
-            {t.glyph}
-          </span>
+          <Icon name={t.icon} size={23} />
           {t.label}
         </button>
       ))}

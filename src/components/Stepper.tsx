@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from './Icon'
 
 export default function Stepper({
   value,
@@ -34,7 +35,7 @@ export default function Stepper({
         onClick={() => bump(-step)}
         aria-label={`decrease ${ariaLabel}`}
       >
-        −
+        <Icon name="minus" size={24} />
       </button>
       {editing ? (
         <input
@@ -56,7 +57,7 @@ export default function Stepper({
         />
       ) : (
         <button
-          className="stepper-value mono"
+          className="stepper-value"
           aria-label={ariaLabel}
           onClick={() => {
             setDraft(String(value))
@@ -68,7 +69,7 @@ export default function Stepper({
         </button>
       )}
       <button className="stepper-btn" onClick={() => bump(step)} aria-label={`increase ${ariaLabel}`}>
-        +
+        <Icon name="plus" size={24} />
       </button>
     </div>
   )

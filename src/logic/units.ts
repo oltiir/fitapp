@@ -54,3 +54,15 @@ export function formatDuration(sec: number): string {
   if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   return `${m}:${String(s).padStart(2, '0')}`
 }
+
+/**
+ * How long ago something happened, in words.
+ *
+ * A session logged earlier the same day read as "0d ago", which is both wrong
+ * and the kind of detail that makes an app feel unfinished.
+ */
+export function formatDaysAgo(days: number): string {
+  if (days <= 0) return 'earlier today'
+  if (days === 1) return 'yesterday'
+  return `${days} days ago`
+}

@@ -34,13 +34,13 @@ async function logABenchWorkout(user: ReturnType<typeof userEvent.setup>, weight
   await setStepper(user, 'Barbell Bench Press set 1 reps', '8')
   await user.click(screen.getByRole('button', { name: 'mark Barbell Bench Press set 1 done' }))
 
-  await user.click(screen.getByRole('button', { name: '✓ Finish' }))
+  await user.click(screen.getByRole('button', { name: 'Finish' }))
 }
 
 describe('first launch', () => {
   it('seeds the PPL routine and suggests Push', async () => {
     render(<App />)
-    expect(await screen.findByText('Next up')).toBeTruthy()
+    expect(await screen.findByText('Push is next — never trained')).toBeTruthy()
     expect(screen.getByText('PUSH')).toBeTruthy()
     expect(screen.getByText('Haven’t trained today')).toBeTruthy()
   })
@@ -53,8 +53,9 @@ describe('first launch', () => {
   it('shows every split as never trained', async () => {
     render(<App />)
     await screen.findByText('This week')
-    expect(screen.getByText(/Push —/)).toBeTruthy()
-    expect(screen.getByText(/Legs —/)).toBeTruthy()
+    // Each split is one tag that both reports how long since and starts it.
+    expect(screen.getByRole('button', { name: 'Start Push — never trained' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Start Legs — never trained' })).toBeTruthy()
   })
 })
 
@@ -92,9 +93,10 @@ describe('logging a workout', () => {
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'mark Barbell Bench Press set 1 done' }))
 
-    // Rest now defaults to 60s everywhere. Matched on the clock glyph so this
-    // hits the running timer, not the "rest 1:00" chip that sets the duration.
-    expect(await screen.findByText(/⏱ (1:00|0:5\d)/)).toBeTruthy()
+    // Rest defaults to 60s and runs in the dock, where the commit bar was.
+    // Scoped to the timer so this cannot pass on the chip that sets the duration.
+    const timer = await screen.findByRole('timer', { name: 'rest remaining' })
+    expect(timer.textContent).toMatch(/(1:00|0:5\d)/)
     expect(screen.getByRole('button', { name: '+30s' })).toBeTruthy()
   })
 
@@ -141,7 +143,7 @@ describe('logging a workout', () => {
       'Barbell Bench Press',
     )
     expect(screen.getByText('All 1 sets done')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '+ set' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add set' })).toBeTruthy()
   })
 
   it('records the session and advances the rotation on finish', async () => {
@@ -150,7 +152,9 @@ describe('logging a workout', () => {
 
     await logABenchWorkout(user, '80')
 
-    expect(await screen.findByText('Trained today — Push')).toBeTruthy()
+    // The plate reports the state above the split it credits you with.
+    expect(await screen.findByText('Trained today')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'PUSH' })).toBeTruthy()
     expect(screen.getByText('1 / 6')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Start Pull' })).toBeTruthy()
   })
@@ -167,9 +171,9 @@ describe('logging a workout', () => {
     render(<App />)
 
     await logABenchWorkout(user, '82.5')
-    await user.click(await screen.findByRole('button', { name: 'Push' }))
+    await user.click(await screen.findByRole('button', { name: /^Start Push — today$/ }))
 
-    expect(await screen.findByText(/last 0d ago · 82.5 × 8/)).toBeTruthy()
+    expect(await screen.findByText(/earlier today · 82.5 × 8/)).toBeTruthy()
     expect(
       (screen.getByRole('button', { name: 'Barbell Bench Press set 1 weight' }) as HTMLElement)
         .textContent,
@@ -181,7 +185,7 @@ describe('logging a workout', () => {
     render(<App />)
 
     await logABenchWorkout(user, '80')
-    await user.click(await screen.findByRole('button', { name: 'Push' }))
+    await user.click(await screen.findByRole('button', { name: /^Start Push — today$/ }))
     await screen.findByText('Barbell Bench Press')
 
     // The field is prefilled with 80. Typing 85 must give 85, not 8085 —
@@ -216,13 +220,16 @@ describe('logging a workout', () => {
     expect(screen.queryByRole('button', { name: 'Barbell Bench Press set 1 weight' })).toBeNull()
   })
 
-  it('retunes and remembers an exercise’s rest from the chip', async () => {
+  it('retunes and remembers an exercise’s rest from the picker', async () => {
     const user = userEvent.setup()
     const first = render(<App />)
     await user.click(await screen.findByRole('button', { name: 'Start Push' }))
     await screen.findByText('Barbell Bench Press')
 
+    // The chip opens a picker of real choices. Cycling one tap at a time cost up
+    // to five taps to get from 45s to 3:00.
     await user.click(screen.getByRole('button', { name: /rest 60 seconds/ }))
+    await user.click(screen.getByRole('button', { name: 'set rest to 1:30' }))
     expect(screen.getByRole('button', { name: /rest 90 seconds/ })).toBeTruthy()
 
     // Persisted to the exercise, so the next workout starts from the new value.
@@ -237,11 +244,12 @@ describe('logging a workout', () => {
     const first = render(<App />)
 
     await logABenchWorkout(user, '85')
-    await screen.findByText('Trained today — Push')
+    await screen.findByText('Trained today')
     first.unmount()
 
     render(<App />)
-    expect(await screen.findByText('Trained today — Push')).toBeTruthy()
+    expect(await screen.findByText('Trained today')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'PUSH' })).toBeTruthy()
   })
 })
 
@@ -282,7 +290,7 @@ describe('bodyweight and runs', () => {
     await user.type(screen.getByLabelText('Distance (km)'), '5')
     await user.type(screen.getByLabelText('Minutes'), '26')
     await user.type(screen.getByLabelText('Seconds'), '30')
-    expect(screen.getByText('→ pace 5:18 /km')).toBeTruthy()
+    expect(screen.getByText('pace 5:18 /km')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText('Runs this week: 1')).toBeTruthy()
@@ -298,7 +306,7 @@ describe('progress', () => {
     render(<App />)
 
     await logABenchWorkout(user, '80')
-    await screen.findByText('Trained today — Push')
+    await screen.findByText('Trained today')
     await openTab(user, 'Progress')
 
     expect(await screen.findByText(/Last Push —/)).toBeTruthy()
@@ -311,7 +319,7 @@ describe('progress', () => {
     render(<App />)
 
     await logABenchWorkout(user, '80')
-    await screen.findByText('Trained today — Push')
+    await screen.findByText('Trained today')
     await openTab(user, 'Progress')
     await user.click(await screen.findByRole('tab', { name: 'PRs' }))
 
@@ -324,7 +332,7 @@ describe('progress', () => {
     render(<App />)
 
     await logABenchWorkout(user, '80')
-    await screen.findByText('Trained today — Push')
+    await screen.findByText('Trained today')
     await openTab(user, 'Progress')
     await user.click(await screen.findByRole('tab', { name: 'Calendar' }))
 
@@ -334,8 +342,8 @@ describe('progress', () => {
     // The cell keeps its date and adds the split marker — dropping the date
     // made attended days impossible to find by eye.
     expect(attended[0]!.querySelector('.daynum')!.textContent).toBe(today)
-    expect(attended[0]!.querySelector('.marks')!.textContent).toBe('P')
-    expect(screen.getByText(/P = push/)).toBeTruthy()
+    expect(attended[0]!.querySelector('.marks')!.textContent).toBe('PS')
+    expect(screen.getByText('PS = push')).toBeTruthy()
   })
 })
 

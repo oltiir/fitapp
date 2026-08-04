@@ -5,6 +5,15 @@ export type ISOTime = string // full ISO-8601 timestamp
 export const SPLITS: readonly Split[] = ['push', 'pull', 'legs'] as const
 export const SPLIT_LABEL: Record<Split, string> = { push: 'Push', pull: 'Pull', legs: 'Legs' }
 
+/**
+ * The mark stamped on a day in the belt strip and the month calendar.
+ *
+ * Two letters, not one: push and pull both rendered as `P`, which left two of
+ * the three splits indistinguishable in the exact two views whose job is
+ * telling you which day was which.
+ */
+export const SPLIT_MARK: Record<Split, string> = { push: 'PS', pull: 'PL', legs: 'LG' }
+
 export interface Exercise {
   id: string
   name: string

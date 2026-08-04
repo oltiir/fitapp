@@ -3,6 +3,7 @@ import { useStore } from '../store/StoreContext'
 import Segmented from '../components/Segmented'
 import TemplateEditor from '../components/TemplateEditor'
 import ExerciseEditor from '../components/ExerciseEditor'
+import Icon from '../components/Icon'
 import { backupFilename, ImportError, parseImport, serializeExport } from '../logic/backup'
 import { daysBetween, toISODate, todayISO } from '../logic/dates'
 import { seedData } from '../logic/seed'
@@ -99,54 +100,52 @@ export default function SettingsScreen() {
 
   return (
     <div className="screen">
-      <h1>Settings</h1>
+      <header className="rail">
+        <span className="where">Settings</span>
+        <span className="when">{data.exercises.filter((e) => !e.archived).length} exercises</span>
+      </header>
 
-      <h2>Backup</h2>
-      <div className="card">
-        <div className="spread" style={{ marginBottom: 12 }}>
-          <span className="sub">Last backup</span>
-          <strong className={backupStale ? 'amber' : undefined}>{backupLabel}</strong>
+      <h2 className="rule">Backup</h2>
+      <div className="readings">
+        <div className="reading">
+          <span className="k">Last export</span>
+          <span className="lead" />
+          <span className="v" style={{ color: backupStale ? 'var(--signal)' : undefined }}>
+            {backupLabel}
+          </span>
         </div>
-        <p className="sub" style={{ marginTop: 0 }}>
-          Your data lives only in this browser on this device. An export is the only copy that
-          survives a lost phone.
-        </p>
-        <button
-          className="btn btn-primary"
-          onClick={() => void exportBackup()}
-          style={{ marginBottom: 8 }}
-        >
-          Export backup
-        </button>
-        <button className="btn" onClick={() => fileRef.current?.click()}>
-          Import backup
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            e.target.value = '' // allow re-picking the same file
-            if (file) void onFilePicked(file)
-          }}
-        />
-        {importErr && <div className="err">{importErr}</div>}
       </div>
+      <p className="sub">
+        Your data lives only in this browser on this device. An export is the only copy that
+        survives a lost phone.
+      </p>
+      <button className="buckle" onClick={() => void exportBackup()}>
+        <span className="stitch" aria-hidden="true" />
+        <Icon name="export" size={20} strokeWidth={2.2} />
+        Export backup
+      </button>
+      <button
+        className="steel-btn"
+        style={{ marginTop: 'var(--s2)' }}
+        onClick={() => fileRef.current?.click()}
+      >
+        <Icon name="import" size={19} />
+        Import backup
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          e.target.value = '' // allow re-picking the same file
+          if (file) void onFilePicked(file)
+        }}
+      />
+      {importErr && <div className="err">{importErr}</div>}
 
-      <h2>Reset</h2>
-      <div className="card">
-        <p className="sub" style={{ marginTop: 0 }}>
-          Wipes every workout, weigh-in and run, and restores the default Push/Pull/Legs
-          templates. There is no undo — export a backup first if you might want any of it.
-        </p>
-        <button className="btn btn-danger" onClick={() => void resetEverything()}>
-          Reset all data
-        </button>
-      </div>
-
-      <h2>Workout templates</h2>
+      <h2 className="rule">Workout templates</h2>
       <Segmented
         options={SPLITS.map((s) => ({ id: s, label: SPLIT_LABEL[s] }))}
         value={split}
@@ -154,63 +153,78 @@ export default function SettingsScreen() {
       />
       <TemplateEditor split={split} />
 
-      <h2>Exercises</h2>
+      <h2 className="rule">Exercises</h2>
       <ExerciseEditor />
 
-      <h2>Preferences</h2>
-      <div className="card">
-        <div className="field">
-          <label htmlFor="pref-unit">Weight unit</label>
-          <select
-            id="pref-unit"
-            value={settings.unit}
-            onChange={(e) =>
-              void saveSettings({ ...settings, unit: e.target.value as 'kg' | 'lb' })
-            }
-          >
-            <option value="kg">kg</option>
-            <option value="lb">lb</option>
-          </select>
-          <div className="sub" style={{ marginTop: 6 }}>
-            Display only — weights are always stored in kilograms.
-          </div>
-        </div>
-
-        <div className="field">
-          <label htmlFor="pref-target">Sessions per week target</label>
-          {/* A select rather than a number field: a controlled text input rejects
-              its own intermediate states (an empty field is out of range), so the
-              value snaps back and typing appends instead of replacing. */}
-          <select
-            id="pref-target"
-            value={String(settings.weeklyTarget)}
-            onChange={(e) => void saveSettings({ ...settings, weeklyTarget: Number(e.target.value) })}
-          >
-            {Array.from({ length: 14 }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="spread">
-          <span>Beep when rest ends</span>
-          {/* A button rather than a checkbox: a native checkbox renders at
-              24x24, well under the 44px minimum for a reliable tap. */}
-          <button
-            className="btn btn-sm"
-            role="switch"
-            aria-checked={settings.restBeepEnabled}
-            aria-label="Beep when rest ends"
-            onClick={() =>
-              void saveSettings({ ...settings, restBeepEnabled: !settings.restBeepEnabled })
-            }
-          >
-            {settings.restBeepEnabled ? 'On' : 'Off'}
-          </button>
+      <h2 className="rule">Preferences</h2>
+      <div className="field">
+        <label htmlFor="pref-unit">Weight unit</label>
+        <select
+          id="pref-unit"
+          value={settings.unit}
+          onChange={(e) => void saveSettings({ ...settings, unit: e.target.value as 'kg' | 'lb' })}
+        >
+          <option value="kg">kg</option>
+          <option value="lb">lb</option>
+        </select>
+        <div className="sub" style={{ marginTop: 6 }}>
+          Display only — weights are always stored in kilograms.
         </div>
       </div>
+
+      <div className="field">
+        <label htmlFor="pref-target">Sessions per week target</label>
+        {/* A select rather than a number field: a controlled text input rejects
+            its own intermediate states (an empty field is out of range), so the
+            value snaps back and typing appends instead of replacing. */}
+        <select
+          id="pref-target"
+          value={String(settings.weeklyTarget)}
+          onChange={(e) => void saveSettings({ ...settings, weeklyTarget: Number(e.target.value) })}
+        >
+          {Array.from({ length: 14 }, (_, i) => i + 1).map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="list-item" style={{ borderTop: '1px solid var(--line)' }}>
+        <span className="grow nm">Beep when rest ends</span>
+        {/* A button rather than a checkbox: a native checkbox renders at
+            24x24, well under the 44px minimum for a reliable tap. */}
+        <button
+          className="steel-btn sm"
+          role="switch"
+          aria-checked={settings.restBeepEnabled}
+          aria-label="Beep when rest ends"
+          onClick={() =>
+            void saveSettings({ ...settings, restBeepEnabled: !settings.restBeepEnabled })
+          }
+        >
+          {settings.restBeepEnabled ? 'On' : 'Off'}
+        </button>
+      </div>
+
+      <h2 className="rule">Reset</h2>
+      <div className="hazard">
+        <div className="stripe" />
+        <div className="inner">
+          <Icon name="warn" size={24} />
+          <div className="txt">
+            <div className="hd">No undo</div>
+            <div className="sub">
+              Wipes every workout, weigh-in and run, and restores the default Push/Pull/Legs
+              templates. Export a backup first if you might want any of it.
+            </div>
+          </div>
+        </div>
+      </div>
+      <button className="steel-btn danger" onClick={() => void resetEverything()}>
+        <Icon name="trash" size={19} />
+        Reset all data
+      </button>
     </div>
   )
 }

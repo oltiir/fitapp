@@ -61,10 +61,10 @@ export default function QuickAddRun({ onClose }: { onClose: () => void }) {
           />
         </div>
       </div>
-      <div className="sub mono">
+      <div className="sub num">
         {pace === null
           ? 'Pace appears once distance and time are set'
-          : `→ pace ${formatPace(pace)} /km`}
+          : `pace ${formatPace(pace)} /km`}
       </div>
     </Sheet>
   )

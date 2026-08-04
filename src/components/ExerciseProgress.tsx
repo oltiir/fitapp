@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store/StoreContext'
 import LineChart, { type Series } from '../components/LineChart'
+import Icon from './Icon'
 import { daysBetween, parseISODate } from '../logic/dates'
 import { finishedSessions, personalRecord } from '../logic/history'
 import { entryFor, topSetKg } from '../logic/sets'
@@ -34,8 +35,8 @@ export default function ExerciseProgress() {
 
   const series: Series[] = points.length
     ? [
-        { kind: 'line', color: 'var(--accent)', points },
-        { kind: 'dots', color: 'var(--accent)', points },
+        { kind: 'line', color: 'var(--chalk)', points },
+        { kind: 'dots', color: 'var(--chalk)', points },
       ]
     : []
 
@@ -47,6 +48,10 @@ export default function ExerciseProgress() {
           { x: daysBetween(firstDate, lastDate), label: shortDate(lastDate) },
         ]
       : []
+
+  // The opinion: what the top set has done since the first record on file.
+  const climb =
+    points.length > 1 ? points[points.length - 1]!.y - points[0]!.y : null
 
   return (
     <>
@@ -65,33 +70,45 @@ export default function ExerciseProgress() {
         </select>
       </div>
 
-      <div className="card">
-        <LineChart
-          series={series}
-          xLabels={xLabels}
-          emptyLabel="No history for this exercise yet."
-        />
-        {pr && (
-          <div className="stat">
-            <div>
-              <div className="label">PR</div>
-              <div className="value">
-                {formatWeight(pr.weightKg, unit)} × {pr.reps}
-              </div>
-            </div>
-            <div>
-              <div className="label">Best e1RM</div>
-              <div className="value">{Math.round(pr.e1rm * 10) / 10}</div>
-            </div>
+      <div className="plot">
+        <LineChart series={series} xLabels={xLabels} emptyLabel="No history for this exercise yet." />
+      </div>
+
+      {pr && (
+        <div className="readings">
+          <div className="reading">
+            <span className="k">Record</span>
+            <span className="lead" />
+            <span className="v">
+              {formatWeight(pr.weightKg, unit)} × {pr.reps}
+            </span>
           </div>
-        )}
-        <div className="sub" style={{ marginTop: 8 }}>
-          Top set per session.
+          {/* Spelled out rather than "e1RM": the display face's 1 has no flag and
+              no foot, so at label size the term rendered as "eIRM". */}
+          <div className="reading">
+            <span className="k">Est. one-rep max</span>
+            <span className="lead" />
+            <span className="v">{Math.round(pr.e1rm * 10) / 10}</span>
+          </div>
+          {climb !== null && climb !== 0 && (
+            <div className="reading">
+              <span className="k">Since first record</span>
+              <span className="lead" />
+              <span className="v">
+                {climb > 0 ? '+' : ''}
+                {Math.round(climb * 10) / 10} {unit}
+              </span>
+            </div>
+          )}
         </div>
+      )}
+
+      <div className="tag-label" style={{ marginTop: "var(--s3)" }}>
+        Top set per session
       </div>
 
       {history.length > 0 && (
-        <div className="card">
+        <div className="list" style={{ marginTop: 'var(--s4)' }}>
           {history
             .slice()
             .reverse()
@@ -102,10 +119,14 @@ export default function ExerciseProgress() {
               const isPr = pr !== null && s.id === pr.sessionId
               return (
                 <div className="list-item" key={s.id}>
-                  <div className="grow">{shortDate(s.date)}</div>
-                  <div className="mono">
+                  <div className="grow nm">{shortDate(s.date)}</div>
+                  <div className="val">
                     {formatSetSummary(done, unit)}
-                    {isPr && <span className="pr-badge">↑ PR</span>}
+                    {isPr && (
+                      <span className="pr-badge">
+                        <Icon name="up" size={11} strokeWidth={2.8} /> PR
+                      </span>
+                    )}
                   </div>
                 </div>
               )

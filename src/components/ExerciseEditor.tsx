@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store/StoreContext'
 import Sheet from './Sheet'
+import Icon from './Icon'
 import { newId } from '../logic/id'
 import { formatDuration, fromDisplayWeight, toDisplayWeight } from '../logic/units'
 import type { Exercise, Settings } from '../types'
@@ -99,15 +100,15 @@ export default function ExerciseEditor() {
     return (
       <div key={e.id} className={`list-item${e.archived ? ' archived' : ''}`}>
         <div className="grow">
-          <div>{e.name}</div>
-          <div className="sub mono">
+          <div className="nm">{e.name}</div>
+          <div className="sub num">
             rest {formatDuration(e.restSeconds)} · step{' '}
             {Math.round(toDisplayWeight(e.incrementKg, unit) * 100) / 100} {unit}
             {isReferenced(e.id) ? '' : ' · unused'}
           </div>
         </div>
         <button className="icon-btn" aria-label={`edit ${e.name}`} onClick={() => setEditing(e)}>
-          ✎
+          <Icon name="pencil" size={18} />
         </button>
         {e.archived ? (
           <button
@@ -115,7 +116,7 @@ export default function ExerciseEditor() {
             aria-label={`restore ${e.name}`}
             onClick={() => void saveExercise({ ...e, archived: false })}
           >
-            ↩
+            <Icon name="undo" size={18} />
           </button>
         ) : (
           <button
@@ -123,18 +124,18 @@ export default function ExerciseEditor() {
             aria-label={`archive ${e.name}`}
             onClick={() => void saveExercise({ ...e, archived: true })}
           >
-            🗄
+            <Icon name="archive" size={18} />
           </button>
         )}
         {!isReferenced(e.id) && (
           <button
-            className="icon-btn btn-danger"
+            className="icon-btn danger"
             aria-label={`delete ${e.name}`}
             onClick={() => {
               if (confirm(`Delete ${e.name}? It is not used anywhere.`)) void removeExercise(e.id)
             }}
           >
-            ✕
+            <Icon name="close" size={18} />
           </button>
         )}
       </div>
@@ -143,18 +144,21 @@ export default function ExerciseEditor() {
 
   return (
     <>
-      <div className="card">
-        {active.length === 0 ? <div className="empty">No exercises.</div> : active.map(row)}
-      </div>
+      {active.length === 0 ? (
+        <div className="empty">No exercises.</div>
+      ) : (
+        <div className="list">{active.map(row)}</div>
+      )}
 
-      <button className="btn" onClick={addExercise}>
-        + Add exercise
+      <button className="steel-btn" onClick={addExercise}>
+        <Icon name="plus" size={19} />
+        Add exercise
       </button>
 
       {archived.length > 0 && (
         <>
-          <h2>Archived</h2>
-          <div className="card">{archived.map(row)}</div>
+          <h2 className="rule">Archived</h2>
+          <div className="list">{archived.map(row)}</div>
         </>
       )}
 

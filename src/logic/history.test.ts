@@ -1,4 +1,10 @@
-import { lastPerformance, personalRecord, finishedSessions, activeSession } from './history'
+import {
+  lastPerformance,
+  personalRecord,
+  finishedSessions,
+  activeSession,
+  recordsSetIn,
+} from './history'
 import type { Session, SetEntry } from '../types'
 
 const set = (weightKg: number, reps: number, done = true): SetEntry => ({ weightKg, reps, done })
@@ -159,6 +165,30 @@ describe('finishedSessions', () => {
     const firstId = sessions[0]!.id
     finishedSessions(sessions)
     expect(sessions[0]!.id).toBe(firstId)
+  })
+})
+
+describe('recordsSetIn', () => {
+  it('names only the exercises whose all-time best came from this session', () => {
+    const older = session('2026-07-20', [
+      { exerciseId: 'bench', sets: [set(100, 5)] },
+      { exerciseId: 'row', sets: [set(60, 8)] },
+    ])
+    const newer = session('2026-07-27', [
+      { exerciseId: 'bench', sets: [set(90, 5)] }, // still below the older best
+      { exerciseId: 'row', sets: [set(70, 8)] }, // a new record
+    ])
+    expect(recordsSetIn([older, newer], newer.id)).toEqual(['row'])
+  })
+
+  it('credits nothing to a session that beat none of its exercises', () => {
+    const best = session('2026-07-20', [{ exerciseId: 'bench', sets: [set(100, 5)] }])
+    const worse = session('2026-07-27', [{ exerciseId: 'bench', sets: [set(80, 5)] }])
+    expect(recordsSetIn([best, worse], worse.id)).toEqual([])
+  })
+
+  it('returns nothing for an unknown session', () => {
+    expect(recordsSetIn([], 'nope')).toEqual([])
   })
 })
 

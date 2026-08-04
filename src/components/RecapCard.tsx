@@ -15,10 +15,8 @@ export default function RecapCard({ split }: { split: Split }) {
   if (!session) {
     return (
       <>
-        <h2>Last {SPLIT_LABEL[split]}</h2>
-        <div className="card">
-          <div className="empty">No {SPLIT_LABEL[split]} session logged yet.</div>
-        </div>
+        <h2 className="rule">Last {SPLIT_LABEL[split]}</h2>
+        <div className="empty">No {SPLIT_LABEL[split]} session logged yet.</div>
       </>
     )
   }
@@ -34,34 +32,40 @@ export default function RecapCard({ split }: { split: Split }) {
 
   return (
     <>
-      <h2>
-        Last {SPLIT_LABEL[split]} —{' '}
-        {parseISODate(session.date).toLocaleDateString(undefined, {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-        })}
+      <h2 className="rule">
+        <span>
+          Last {SPLIT_LABEL[split]} —{' '}
+          {parseISODate(session.date).toLocaleDateString(undefined, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+          })}
+        </span>
+        {/* Parked at the end of the rule rather than on its own line under it,
+            where it read as a second heading repeating the date above. */}
+        <span className="val">{gap === 0 ? 'today' : `${gap} days ago`}</span>
       </h2>
-      <div className="card">
-        <div className="sub" style={{ marginBottom: 10 }}>
-          {gap === 0 ? 'today' : `${gap} day${gap === 1 ? '' : 's'} ago`}
-        </div>
 
+      <div className="list">
         {session.entries.map((entry, i) => {
           const done = entry.sets.filter((s) => s.done)
           return (
             <div className="list-item" key={`${entry.exerciseId}-${i}`}>
-              <div className="grow">{nameOf(entry.exerciseId)}</div>
-              <div className={`mono${done.length === 0 ? ' sub' : ''}`}>
+              <div className="grow nm">{nameOf(entry.exerciseId)}</div>
+              <div className={done.length === 0 ? 'sub' : 'val'}>
                 {done.length === 0 ? 'skipped' : formatSetSummary(done, unit)}
               </div>
             </div>
           )
         })}
+      </div>
 
-        <div className="sub mono" style={{ marginTop: 10 }}>
+      {/* A line of facts stays in the data voice here as it does on Today, so the
+          same sentence does not change typeface between screens. */}
+      <div className="facts">
+        <span>
           Volume {volume} · {duration}
-        </div>
+        </span>
       </div>
     </>
   )

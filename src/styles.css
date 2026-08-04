@@ -1,199 +1,1503 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   KNURL & CHALK — the visual world of FitApp.
+
+   Built from the kit that touches your hands: chalk on rubber, punched belt
+   holes, tooled leather, webbing straps, steel hardware.
+
+   The material is FLAT AND HONEST, not simulated. There are no gradient fills
+   standing in for leather, no inset highlights standing in for a bevel, and no
+   emboss standing in for tooling. Tan is flat tan; a stitch is a real 1px dashed
+   line; a punched hole is real negative space masked out of the strap so the
+   floor shows through it. A first pass built all five substances out of
+   `linear-gradient` and `box-shadow` and it read as vinyl.
+
+   Structural rules that hold everywhere in this file:
+
+     · Bands, never cards. A band runs edge to edge, carries no radius and no
+       outline of its own, and is separated from its neighbour by one hairline.
+       Nothing rounded nests inside one.
+     · Punched holes, never rings or dots. A filled hole is a shape change, so
+       state never depends on colour alone.
+     · Leather owns whole regions — the commit bar, the belt — it is not an
+       accent sprinkled on grey.
+     · Every icon is drawn SVG on one 24-grid at one stroke weight. No glyphs,
+       no emoji, not even for a bullet or an arrow.
+     · No label sits above a heading. State goes into the heading's own line or
+       underneath it, never into an eyebrow.
+     · One authored motion: the punch. Everything else is quiet and fast.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'Big Shoulders Display';
+  src: url('./fonts/big-shoulders-display.woff2') format('woff2-variations');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --bg: #0b0d10;
-  --surface: #14181d;
-  --surface-2: #1c2229;
-  --line: #2a323c;
-  --text: #e7ecf3;
-  --dim: #96a1b0;
-  --accent: #4da3ff;
-  --good: #3ddc97;
-  --gold: #f0b429;
-  --warn: #ff6b6b;
-  --radius: 14px;
-  --tabbar-h: 56px;
+  /* Ground: rubber crumb, warm-neutral rather than blue-black, because chalk
+     and leather are warm and a cool ground makes both look dirty. */
+  --floor: #0d0c0b;
+  --deck: #1a1816; /* a band */
+  --deck-open: #24211d; /* the band you are working in — ground, not a border */
+
+  --line: #35302a; /* hairlines only — too dark for text */
+  /* 5.86:1 on --floor and 4.80:1 on --deck-open. The earlier value cleared the
+     floor but only reached 4.43:1 inside an open band, where labels like
+     .cur-label actually sit. Secondary text has to clear both grounds. */
+  --steel: #928c82;
+  --steel-hi: #b8b1a5;
+
+  --chalk: #f4f1e8;
+  --chalk-dim: #a9a29a; /* 7.7:1 on floor */
+
+  --leather: #b5763a;
+  --leather-dim: #9a6230;
+  --leather-hi: #d08f4e;
+  /* Stamped text on tan: 5.01:1 on --leather, which is the ground it actually
+     ships on. It reaches 6.8:1 only against --leather-hi. */
+  --leather-ink: #1a1005;
+  --stitch: rgba(26, 16, 5, 0.55);
+
+  --signal: #f04a41; /* 5.3:1 on floor — safe for text */
+  --signal-fill: #c22a24;
+  --signal-lo: #46100e;
+
+  --display: 'Big Shoulders Display', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --data: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 20px;
+  --s5: 32px;
+  --s6: 48px;
+
+  --r: 4px; /* only ever on a free-standing control, never on a band */
   --pad: 16px;
+  --tabbar-h: 60px;
+  --dock-h: 168px; /* sized for the resting dock, so its height never changes */
+  --app-w: 460px;
+
+  /* Real textures, at an amplitude you can actually see. */
+  --knurl: repeating-linear-gradient(45deg, rgba(244, 241, 232, 0.08) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(-45deg, rgba(244, 241, 232, 0.08) 0 1px, transparent 1px 5px);
+  --webbing: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.26) 0 1px, transparent 1px 4px);
+  --hazard: repeating-linear-gradient(135deg, var(--signal-lo) 0 9px, #17100e 9px 18px);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
+
 html,
 body,
 #root {
   height: 100%;
   margin: 0;
 }
+
 body {
-  background: var(--bg);
-  color: var(--text);
-  font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--floor);
+  color: var(--chalk);
+  font: 16px/1.45 var(--data);
   overscroll-behavior: none;
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
 }
 
-/* Without this, buttons fall back to the UA's default `buttontext` colour —
-   near-black on a dark theme, which makes most of the app unreadable. */
 button {
   font: inherit;
-  color: var(--text);
+  color: var(--chalk);
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .app {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-width: var(--app-w);
+  margin: 0 auto;
   padding-top: env(safe-area-inset-top);
 }
 
 .screen {
   flex: 1;
   overflow-y: auto;
-  padding: var(--pad);
-  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 24px);
+  padding: 0 var(--pad);
+  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + var(--s5));
   -webkit-overflow-scrolling: touch;
 }
 
-.tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background: rgba(20, 24, 29, 0.92);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid var(--line);
-  z-index: 30;
+/* ── Typography ─────────────────────────────────────────────────────────────
+   Display face for every name, label and headline number. System stack with
+   tabular figures for data. A line of facts is data and takes the data face
+   wherever it appears, so the same sentence never changes voice per screen. */
+
+h1,
+h2,
+h3 {
+  font-size: inherit;
+  font-weight: inherit;
+  margin: 0;
 }
-.tabbar button {
-  background: none;
-  border: 0;
-  color: var(--dim);
-  font-size: 11px;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.sub {
+  color: var(--chalk-dim);
+  font-size: 0.9rem;
+}
+
+/* A line of facts, in the data voice, tabular. */
+.facts {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 3px;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+  font-size: 0.9rem;
+  color: var(--chalk-dim);
+  font-variant-numeric: tabular-nums;
 }
-.tabbar button[aria-current='page'] {
-  color: var(--accent);
-}
-.tabbar .glyph {
-  font-size: 19px;
-  line-height: 1;
-}
-
-.card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--pad);
-  margin-bottom: 12px;
-}
-
-h1 {
-  font-size: 22px;
-  margin: 0 0 2px;
-}
-h2 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--dim);
-  margin: 20px 0 8px;
+.facts strong {
+  color: var(--chalk);
   font-weight: 600;
 }
-.sub {
-  color: var(--dim);
-  font-size: 13px;
+
+/* A label, in the display voice. Never placed above a heading. */
+.tag-label {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
 }
+
+/* A ruled section marker: heading, hairline, optional value at the far end. */
+.rule {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  margin: var(--s5) 0 var(--s2);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--steel-hi);
+}
+.rule::after {
+  content: '';
+  order: 2;
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.rule:first-child {
+  margin-top: var(--s4);
+}
+.rule .val {
+  order: 3;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  color: var(--steel);
+  white-space: nowrap;
+}
+
 .row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--s3);
 }
 .spread {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--s3);
 }
-.mono {
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── The top rail ───────────────────────────────────────────────────────────*/
+
+.rail {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s3) 0 var(--s2);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s4);
+}
+.rail .where {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.rail .when {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+
+/* ── The plate ──────────────────────────────────────────────────────────────
+   Today's hero: the split at singlet scale with its state on the line beneath.
+   No label above it — a kicker is banned outright and the state reads perfectly
+   well underneath. No glow behind it either: a zero-offset halo is decoration,
+   and its ellipse edge showed as a lighter rectangle on a wide screen. */
+
+.plate {
+  padding: var(--s2) 0 var(--s3);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s4);
+}
+.plate .split {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(3.4rem, 19vw, 5.5rem);
+  line-height: 0.82;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.plate .facts {
+  margin-top: var(--s3);
+}
+
+/* An inked rubber stamp. Only where something was actually achieved. */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 3px;
+  border: 1.5px solid var(--signal);
+  border-radius: 2px;
+  color: var(--signal);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(-3deg);
+}
+
+/* ── Belt strip ─────────────────────────────────────────────────────────────
+   The week as a punched leather belt. The holes are genuinely cut: one radial
+   mask tile per day column removes the tan, so the floor shows through. Days
+   you trained get a chalk plug laid over the hole — a filled punch, which is
+   what a chalk mark in a punched hole physically is.
+
+   The plug layer sits outside the masked element on purpose; a child of the
+   belt would be masked away with it. */
+
+.belt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.belt {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 60px;
+}
+.belt .strap-face {
+  position: absolute;
+  inset: 0;
+  background-color: var(--leather);
+  /* Seven die-cut holes, centred in each seventh, 11px radius. */
+  -webkit-mask-image: radial-gradient(circle 11px at 50% 68%, transparent 0 11px, #000 11px);
+  mask-image: radial-gradient(circle 11px at 50% 68%, transparent 0 11px, #000 11px);
+  -webkit-mask-size: calc(100% / 7) 100%;
+  mask-size: calc(100% / 7) 100%;
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+}
+/* A real stitch: one dashed hairline, no bevel. */
+.belt .stitch {
+  position: absolute;
+  inset: 4px;
+  border-top: 1px dashed var(--stitch);
+  border-bottom: 1px dashed var(--stitch);
+  pointer-events: none;
+}
+.belt .dows,
+.belt .plugs {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.belt .dows span {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 7px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  /* Full strength. At opacity .62 these composited to ~2.9:1 on tan — below the
+     floor the rest of the system holds, and unreadable at arm's length. The
+     plugs are 22px discs, so hierarchy comes from scale, not from fading ink. */
+  color: var(--leather-ink);
+}
+.belt .plugs .slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 68% of 60px is 40.8px; a 22px plug centres on the cut at top: 30px. */
+.belt .plugs .plug {
+  position: absolute;
+  top: 30px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--chalk);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 0.72rem;
+  letter-spacing: -0.02em;
+  color: var(--floor);
+}
+.belt .plugs .today-ring {
+  position: absolute;
+  top: 26px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--leather-ink);
+}
+.belt .plugs .runmark {
+  position: absolute;
+  top: 54px;
+  width: 9px;
+  height: 2px;
+  background: var(--leather-ink);
+}
+
+.belt-tally {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--chalk);
+  white-space: nowrap;
+}
+
+/* Set pips: the same punched language at set scale. These sit straight on the
+   band, so an empty one is a floor-coloured disc with a hard rim — the hole
+   itself, not a shaded impression of one. */
+.holes {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.holes .pin {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--floor);
+  border: 1px solid var(--line);
+  flex: 0 0 11px;
+}
+.holes .pin.filled {
+  background: var(--chalk);
+  border-color: var(--chalk);
+}
+.holes .pin.cur {
+  background: var(--leather);
+  border-color: var(--leather-hi);
+}
+
+/* ── Split tags ─────────────────────────────────────────────────────────────*/
+
+.tags {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+.tag {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 62px;
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--deck);
+  text-align: left;
+}
+.tag:active {
+  background: var(--deck-open);
+}
+.tag .nm {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+.tag .ago {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.35rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.tag .ago .u {
+  font-size: 0.82rem;
+  color: var(--steel);
+  margin-left: 1px;
+}
+.tag.next {
+  border-color: var(--leather);
+  background: var(--deck-open);
+}
+.tag.next .nm {
+  color: var(--leather-hi);
+}
+/* Stale gets red, a notched corner and a figure — three cues, so none of them
+   has to be colour. */
+.tag.stale {
+  border-color: var(--signal);
+}
+.tag.stale::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 13px;
+  height: 13px;
+  background: var(--signal);
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+}
+.tag.stale .ago,
+.tag.stale .nm {
+  color: var(--signal);
+}
+
+/* ── Bands ──────────────────────────────────────────────────────────────────
+   The workhorse container, and the thing a card is not: full width of the
+   screen, no radius, no outline, one hairline between neighbours. The band you
+   are working in is marked by its ground. */
+
+.bands {
+  margin: 0 calc(var(--pad) * -1);
+  border-top: 1px solid var(--line);
+}
+.strap {
+  position: relative;
+  background-color: var(--deck);
+  background-image: var(--webbing);
+  border-bottom: 1px solid var(--line);
+}
+.strap.open {
+  background-color: var(--deck-open);
+}
+
+.strap-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 66px;
+  padding: var(--s2) var(--pad);
+  background: none;
+  border: 0;
+  text-align: left;
+}
+.strap-row .nm {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.strap.open .strap-row .nm {
+  white-space: normal;
+  font-size: 1.35rem;
+}
+.strap-row .sm {
+  font-size: 0.82rem;
+  color: var(--chalk-dim);
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
-.btn {
-  min-height: 48px;
+.strap-body {
+  padding: 0 var(--pad) var(--s3);
+}
+
+/* Last time's numbers, ruled off rather than embossed into a rounded inset. */
+.tooled {
+  display: flex;
+  align-items: center;
+  gap: var(--s2) var(--s3);
+  flex-wrap: wrap;
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--chalk-dim);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: var(--s3);
+}
+.tooled .up {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--signal);
+  font-family: var(--display);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.done-set {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  font-size: 16px;
+  min-height: 46px;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+.done-set:last-of-type {
+  border-bottom: 0;
+}
+.done-set .tick {
+  color: var(--chalk);
+  display: flex;
+  flex: 0 0 20px;
+}
+.done-set .lbl {
+  flex: 1;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.done-set .val {
   font-weight: 600;
+  font-size: 1rem;
+}
+
+/* ── Controls ───────────────────────────────────────────────────────────────
+
+   The buckle bar: flat tan, stamped near-black lettering, one dashed stitch,
+   and three real punched holes at the strap end. No gradient, no highlight —
+   the previous build's bevel made it read as moulded plastic. */
+
+.buckle {
+  position: relative;
+  width: 100%;
+  min-height: 58px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--s2);
+  padding: 0 var(--s6) 0 var(--s4);
+  border: 0;
+  border-radius: var(--r);
+  color: var(--leather-ink);
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.15rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  /* Flat tan. No webbing rib here: ribbing every tan region made leather read as
+     corduroy and left "saddle leather" resting on hue alone. Leather is flat and
+     stitched; webbing is ribbed. */
+  background-color: var(--leather);
+  /* The strap end, genuinely punched through: one tongue slot and one hole.
+     Three evenly spaced circles on a full-width control read as an overflow
+     menu — "•••" sitting on the primary action.
+     Where mask-composite is unsupported the layers union to solid tan: the
+     device is lost, nothing breaks. */
+  -webkit-mask-image: radial-gradient(ellipse 3.5px 10px at calc(100% - 16px) 50%, transparent 0 99%, #000 100%),
+    radial-gradient(circle 4.5px at calc(100% - 34px) 50%, transparent 0 4.5px, #000 4.5px);
+  mask-image: radial-gradient(ellipse 3.5px 10px at calc(100% - 16px) 50%, transparent 0 99%, #000 100%),
+    radial-gradient(circle 4.5px at calc(100% - 34px) 50%, transparent 0 4.5px, #000 4.5px);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  transition: background-color 120ms var(--ease);
 }
-.btn:active {
-  background: #232b34;
+.buckle .stitch {
+  position: absolute;
+  inset: 4px;
+  border-top: 1px dashed var(--stitch);
+  border-bottom: 1px dashed var(--stitch);
+  pointer-events: none;
 }
-.btn:disabled {
-  opacity: 0.4;
+.buckle:active {
+  background-color: var(--leather-dim);
 }
-.btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #04121f;
+.buckle:disabled {
+  background-color: var(--deck);
+  background-image: var(--knurl);
+  color: var(--steel);
 }
-.btn-ghost {
-  background: none;
-}
-.btn-sm {
-  min-height: 44px;
-  width: auto;
-  padding: 0 14px;
-  font-size: 14px;
-  font-weight: 500;
-}
-.btn-danger {
-  color: var(--warn);
+.buckle:disabled .stitch {
+  border-color: rgba(244, 241, 232, 0.1);
 }
 
-input,
-select {
-  background: var(--surface-2);
-  color: var(--text);
+/* Steel: the secondary action. Real knurl on a flat plate. */
+.steel-btn {
+  width: 100%;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  padding: 0 var(--s3);
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 16px;
+  border-radius: var(--r);
+  background-color: var(--deck);
+  background-image: var(--knurl);
+  color: var(--chalk);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.steel-btn:active {
+  background-color: var(--deck-open);
+}
+.steel-btn:disabled {
+  color: var(--steel);
+  opacity: 0.55;
+}
+.steel-btn.sm {
+  width: auto;
+  min-height: 44px;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.steel-btn.danger {
+  color: var(--signal);
+  border-color: rgba(240, 74, 65, 0.4);
+}
+
+.quiet {
   min-height: 44px;
   width: 100%;
+  background: none;
+  border: 0;
+  color: var(--steel);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.quiet:active {
+  color: var(--chalk);
+}
+.quiet.danger {
+  color: var(--signal);
+}
+
+.btn-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+}
+
+/* Something is due. A mark on the control, never a renamed control. */
+.due-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--signal);
+  margin-left: 6px;
+}
+
+.icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  color: var(--steel);
+}
+.icon-btn:active {
+  color: var(--chalk);
+}
+/* Destructive icon buttons stay quiet until pressed; a column of red crosses
+   down a list of weigh-ins reads as an alarm, not an affordance. */
+.icon-btn.danger:active {
+  color: var(--signal);
+}
+.icon-btn:disabled {
+  opacity: 0.3;
+}
+
+.ico {
+  display: block;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+/* The gym-visit mark: a drawn disc, because a '•' character is a glyph
+   standing in for the icon system. */
+.dot-mark {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* ── Steppers ───────────────────────────────────────────────────────────────*/
+
+.stepper {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+}
+.stepper-btn {
+  width: 54px;
+  min-height: 62px;
+  flex: 0 0 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  background-color: var(--deck);
+  background-image: var(--knurl);
+  color: var(--chalk);
+  border-radius: 0;
+}
+.stepper-btn:active {
+  background-color: var(--deck-open);
+}
+.stepper-value,
+.stepper-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 62px;
+  background: var(--floor);
+  border: 1px solid var(--line);
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+  text-align: center;
+  color: var(--chalk);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.9rem;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px;
+}
+.stepper-suffix {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--steel);
+  margin-left: 3px;
+  vertical-align: 0.35em;
+}
+
+/* ── The dock ───────────────────────────────────────────────────────────────
+   Session only. The commit action is pinned under the thumb and NEVER leaves,
+   resting included: an earlier build replaced it with the rest timer, which
+   made Skip the only route back to the primary action for most of a session.
+   Rest is a slim strip above it. Fixed height, so nothing shifts either way. */
+
+.dock {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-w);
+  bottom: 0;
+  z-index: 40;
+  padding: var(--s2) var(--pad) calc(var(--s2) + env(safe-area-inset-bottom));
+  /* Opaque. A blurred translucent bar let list rows ghost through it. */
+  background: var(--floor);
+  border-top: 1px solid var(--line);
+}
+.dock .who {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin-bottom: 6px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.dock .who .load {
+  color: var(--chalk);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* Rest: a slim strip whose webbing depletes along its foot. */
+.rest {
+  position: relative;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--deck);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: 0 var(--s2) 0 var(--s3);
+  margin-bottom: var(--s2);
+}
+.rest .track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 7px;
+  background-color: var(--leather);
+  background-image: var(--webbing);
+  transform-origin: left center;
+  transition: transform 980ms linear;
+}
+.rest .t {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--chalk);
+}
+.rest .lab {
+  flex: 1;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--chalk-dim);
+}
+.rest.over {
+  border-color: var(--chalk);
+}
+.rest.over .track {
+  background-image: none;
+  background-color: var(--chalk);
+}
+.rest-actions {
+  display: flex;
+  gap: 6px;
+}
+.rest-actions button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 var(--s2);
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--floor);
+  color: var(--chalk-dim);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rest-actions button:active {
+  color: var(--chalk);
+  background: var(--deck);
+}
+
+/* Rest duration picker: real choices. Cycling six values one tap at a time
+   cost up to five taps to get from 45s to 3:00. */
+.rest-pick {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: var(--s3);
+}
+.rest-pick button {
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--floor);
+  color: var(--chalk-dim);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.rest-pick button[aria-pressed='true'] {
+  background: var(--chalk);
+  border-color: var(--chalk);
+  color: var(--floor);
+}
+.rest-chip {
+  min-height: 44px;
+  padding: 0 var(--s3);
+  border-radius: var(--r);
+  border: 1px solid var(--line);
+  background: var(--floor);
+  color: var(--chalk-dim);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cur-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  margin: var(--s3) 0 var(--s2);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+.cur-inputs {
+  display: flex;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+.strap-foot {
+  display: flex;
+  gap: var(--s2);
+  margin-top: var(--s3);
+}
+.strap-foot button {
+  flex: 1;
+  min-height: 46px;
+  border-radius: 0; /* nothing rounded nests inside a band */
+  border: 1px solid var(--line);
+  background: var(--floor);
+  color: var(--chalk-dim);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.strap-foot button.next {
+  border-color: var(--leather);
+  color: var(--leather-hi);
+}
+.strap-foot button.drop {
+  flex: 0 0 auto;
+  padding: 0 var(--s3);
+  border-color: transparent;
+  background: none;
+  color: var(--steel);
+}
+
+/* ── Session head ───────────────────────────────────────────────────────────*/
+
+.wk-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s3) 0 var(--s2);
+  margin-bottom: var(--s3);
+  background: var(--floor);
+  border-bottom: 1px solid var(--line);
+}
+.wk-head .split {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.6rem;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.wk-head .elapsed {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: 0.82rem;
+  color: var(--steel);
+  font-variant-numeric: tabular-nums;
+  margin-top: 3px;
+}
+.session-screen {
+  padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom));
+}
+
+/* ── Tab bar ────────────────────────────────────────────────────────────────*/
+
+.tabbar {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-w);
+  bottom: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--floor);
+  border-top: 1px solid var(--line);
+}
+.tabbar button {
+  position: relative;
+  background: none;
+  border: 0;
+  color: var(--steel);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.tabbar button[aria-current='page'] {
+  color: var(--chalk);
+}
+.tabbar button[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 2px;
+  background: var(--chalk);
+}
+
+/* ── Notices ────────────────────────────────────────────────────────────────*/
+
+.band-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s3);
+}
+.band-notice.live {
+  border-color: var(--leather);
+  color: var(--chalk);
+}
+.band-notice .txt {
+  flex: 1;
+  min-width: 0;
+}
+.band-notice .hd {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Hazard: only for data you cannot get back. */
+.hazard {
+  border: 1px solid rgba(240, 74, 65, 0.45);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-bottom: var(--s3);
+}
+.hazard .stripe {
+  height: 8px;
+  background-image: var(--hazard);
+}
+.hazard .inner {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3);
+  background: var(--deck);
+}
+.hazard .hd {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
 }
 
 .empty {
-  color: var(--dim);
+  color: var(--steel);
   text-align: center;
-  padding: 32px 12px;
-  font-size: 14px;
+  padding: var(--s5) var(--s3);
+  font-size: 0.9rem;
 }
+
+/* ── Lists ──────────────────────────────────────────────────────────────────*/
+
+.list {
+  border-top: 1px solid var(--line);
+  margin-bottom: var(--s3);
+}
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 52px;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.list-item .nm {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.list-item .val {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+.archived {
+  opacity: 0.45;
+}
+
+.pr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  min-height: 58px;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.pr-row:last-child {
+  border-bottom: 0;
+}
+.pr-row .nm {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.pr-row .load {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.35rem;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.pr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  color: var(--signal);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Readings ───────────────────────────────────────────────────────────────
+   Supporting figures, in the app's own ruled-row language. Replaces a row of
+   big-number/small-label tiles, which is the hero-metric template and reads the
+   same on every product in the category. */
+
+.readings {
+  margin-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+.reading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  min-height: 44px;
+  padding: var(--s2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.reading .k {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
+  white-space: nowrap;
+}
+/* Every label in a readings stack takes the same voice. One sentence-case row
+   among tracked-out caps read as a rendering fault, not an editorial choice. */
+.reading .lead {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.reading .v {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── Chart ──────────────────────────────────────────────────────────────────*/
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.plot {
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── Segmented ──────────────────────────────────────────────────────────────*/
+
+.segmented {
+  display: flex;
+  gap: var(--s4);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s4);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.segmented::-webkit-scrollbar {
+  display: none;
+}
+.segmented button {
+  position: relative;
+  min-height: 46px;
+  padding: 0 0 var(--s2);
+  border: 0;
+  background: none;
+  color: var(--steel);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.segmented button[aria-selected='true'] {
+  color: var(--chalk);
+}
+.segmented button[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--chalk);
+}
+
+/* A rule already draws a line across the screen; the next block's own top
+   border lands 8px under it and reads as a seam rather than a division. */
+.rail + .plate,
+.segmented + .list,
+.segmented + .readings,
+.rule + .list,
+.rule + .plot,
+.rule + .readings {
+  border-top: 0;
+}
+
+/* ── Calendar ───────────────────────────────────────────────────────────────
+   A month of punched holes. The date is the point of this view, so it is set at
+   a readable size and contrast; a future day is expressed by having no mark,
+   never by fading its date towards the background. */
+
+.cal {
+  display: grid;
+  /* The week-count column is reserved, not `auto`: seven 1fr day columns took
+     all the width and clipped the count against the screen edge. */
+  grid-template-columns: repeat(7, 1fr) 18px;
+  gap: 4px;
+}
+.cal .dow {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel);
+  text-align: center;
+  padding-bottom: var(--s1);
+}
+.cal .day {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--floor);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  color: var(--chalk-dim);
+}
+.cal .day.blank {
+  background: none;
+  border-color: transparent;
+}
+.cal .day.attended {
+  background: var(--chalk);
+  border-color: var(--chalk);
+  color: var(--floor);
+}
+.cal .day.today {
+  border-color: var(--leather-hi);
+  border-width: 2px;
+}
+.cal .day .daynum {
+  font-size: 0.82rem; /* 12.5px — above the legibility floor */
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.cal .day.attended .daynum {
+  color: var(--floor);
+  opacity: 0.72;
+}
+.cal .day .marks {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: 0.72rem;
+  line-height: 1;
+  min-height: 0.72rem;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  color: var(--floor);
+}
+/* A run on a day you did not lift sits on the floor, where the darker red only
+   reached 3.4:1. Each ground gets the red that clears the floor on it. */
+.cal .day .run {
+  font-size: 0.72rem;
+  color: var(--signal);
+}
+.cal .day.attended .run {
+  color: var(--signal-fill);
+}
+.cal .wk {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: var(--s1);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--steel);
+  font-variant-numeric: tabular-nums;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s3);
+  margin-top: var(--s3);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  color: var(--steel);
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Sheet ──────────────────────────────────────────────────────────────────*/
 
 .sheet {
   position: fixed;
   inset: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-w);
   z-index: 100;
-  background: var(--bg);
+  background: var(--floor);
   display: flex;
   flex-direction: column;
   padding-top: env(safe-area-inset-top);
@@ -202,584 +1506,116 @@ select {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: var(--s2);
+  padding: var(--s1) var(--s3);
   border-bottom: 1px solid var(--line);
 }
 .sheet-title {
-  font-size: 16px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 .sheet-action {
-  min-height: 44px;
-  padding: 0 10px;
+  min-height: 48px;
+  padding: 0 var(--s2);
   background: none;
   border: 0;
-  color: var(--dim);
-  font-size: 16px;
+  color: var(--steel);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   text-align: left;
 }
 .sheet-action.primary {
-  color: var(--accent);
-  font-weight: 700;
+  color: var(--leather-hi);
+  font-weight: 900;
   text-align: right;
   justify-self: end;
 }
 .sheet-action.primary:disabled {
-  color: var(--dim);
+  color: var(--steel);
   opacity: 0.5;
 }
 .sheet-body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--pad);
-  padding-bottom: calc(var(--pad) + env(safe-area-inset-bottom) + 40px);
+  padding: var(--s4) var(--pad);
+  padding-bottom: calc(var(--s4) + env(safe-area-inset-bottom) + var(--s6));
+}
+
+/* ── Fields ─────────────────────────────────────────────────────────────────*/
+
+input,
+select {
+  background: var(--floor);
+  color: var(--chalk);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: var(--s3);
+  font-size: 16px; /* under 16px iOS zooms the whole page on focus */
+  font-family: var(--data);
+  font-variant-numeric: tabular-nums;
+  min-height: 52px;
+  width: 100%;
+}
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--leather-hi);
+  outline-offset: 2px;
 }
 .field {
-  margin-bottom: 12px;
+  margin-bottom: var(--s4);
 }
 .field label {
   display: block;
-  font-size: 13px;
-  color: var(--dim);
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel);
   margin-bottom: 6px;
 }
-.list-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
-}
-.list-item:last-child {
-  border-bottom: 0;
-}
-.grow {
-  flex: 1;
-  min-width: 0;
-}
-.icon-btn {
-  min-width: 44px;
-  min-height: 44px;
-  background: none;
-  border: 0;
-  color: var(--dim);
-  font-size: 17px;
-}
-.archived {
-  opacity: 0.45;
-}
 .err {
-  color: var(--warn);
-  font-size: 13px;
-  margin-top: 8px;
-}
-.amber {
-  color: var(--gold);
-}
-.segmented {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  background: var(--surface-2);
-  border-radius: 11px;
-  margin-bottom: 14px;
-}
-.segmented button {
-  flex: 1;
-  min-height: 44px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: var(--dim);
-  font-size: 13px;
-  font-weight: 600;
-}
-.segmented button[aria-selected='true'] {
-  background: var(--surface);
-  color: var(--text);
-}
-.stepper {
-  display: flex;
-  align-items: stretch;
-  flex: 1;
-  min-width: 0;
-}
-.stepper-btn {
-  width: 46px;
-  min-height: 46px;
-  flex: 0 0 46px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  font-size: 22px;
-  color: var(--text);
-}
-.stepper-btn:first-child {
-  border-radius: 10px 0 0 10px;
-}
-.stepper-btn:last-child {
-  border-radius: 0 10px 10px 0;
-}
-.stepper-btn:active {
-  background: #283039;
-}
-.stepper-value,
-.stepper-input {
-  flex: 1;
-  min-width: 0;
-  min-height: 46px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 0;
-  border-right: 0;
-  border-radius: 0;
-  text-align: center;
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--text);
-  padding: 0 4px;
-}
-.stepper-suffix {
-  font-size: 12px;
-  color: var(--dim);
-  margin-left: 3px;
-  font-weight: 400;
+  color: var(--signal);
+  font-size: 0.82rem;
+  margin-top: var(--s2);
 }
 
-.check-btn {
-  width: 46px;
-  min-height: 46px;
-  flex: 0 0 46px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  font-size: 18px;
-  color: var(--dim);
+/* ── The punch ──────────────────────────────────────────────────────────────
+   The one authored motion. Committing a set punches a hole: the chalk plug
+   lands and settles. Nothing else animates on entrance. */
+
+@keyframes punch {
+  0% {
+    transform: scale(0.35);
+  }
+  58% {
+    transform: scale(1.24);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
-.check-btn[data-done='true'] {
-  background: var(--good);
-  border-color: var(--good);
-  color: #04180f;
+.holes .pin.punched {
+  animation: punch 420ms var(--ease);
 }
 
-.exercise-head {
-  margin-bottom: 10px;
-}
-.exercise-head .name {
-  font-size: 17px;
-  font-weight: 600;
-}
-.exercise-head .last {
-  font-size: 13px;
-  color: var(--dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.sticky-head {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--bg);
-  padding: 4px 0 10px;
-  margin: -4px 0 8px;
-  border-bottom: 1px solid var(--line);
-}
-.session-screen {
-  padding-bottom: 140px;
-}
-.btn-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.status-card {
-  border-left: 3px solid var(--line);
-}
-.status-card.attended {
-  border-left-color: var(--good);
-}
-.dots {
-  display: flex;
-  gap: 7px;
-}
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 1.5px solid var(--line);
-}
-.dot.filled {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-.dot.filled.gold {
-  background: var(--gold);
-  border-color: var(--gold);
-}
-.gold-text {
-  color: var(--gold);
-}
-.since {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: var(--dim);
-  margin-top: 10px;
-}
-.since .stale {
-  color: var(--gold);
-}
-.status-icon {
-  font-size: 20px;
-  margin-right: 8px;
-}
-.nudge {
-  border-color: var(--gold);
-  color: var(--gold);
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: space-between;
-}
-.chart {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-.stat {
-  display: flex;
-  gap: 20px;
-  margin-top: 10px;
-}
-.stat .label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--dim);
-}
-.stat .value {
-  font-size: 19px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.down {
-  color: var(--good);
-}
-.up {
-  color: var(--warn);
-}
-.cal {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr) auto;
-  gap: 3px;
-}
-.cal .dow {
-  font-size: 10px;
-  color: var(--dim);
-  text-align: center;
-  padding-bottom: 4px;
-}
-.cal .day {
-  aspect-ratio: 1;
-  border-radius: 8px;
-  background: var(--surface-2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  color: var(--dim);
-  gap: 1px;
-}
-.cal .day.blank {
-  background: none;
-}
-.cal .day.future {
-  opacity: 0.35;
-}
-.cal .day.attended {
-  background: #1e3a52;
-  color: var(--text);
-  font-weight: 700;
-}
-.cal .day .run {
-  font-size: 8px;
-  color: var(--good);
-}
-.cal .wk {
-  font-size: 10px;
-  color: var(--dim);
-  display: flex;
-  align-items: center;
-  padding-left: 6px;
-}
-.pr-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--line);
-}
-.pr-row:last-child {
-  border-bottom: 0;
-}
-.pr-badge {
-  color: var(--gold);
-  font-size: 11px;
-  margin-left: 6px;
-}
-.cal .day .daynum {
-  font-size: 10px;
-  opacity: 0.65;
-  line-height: 1;
-}
-.cal .day .marks {
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  min-height: 11px;
-  display: flex;
-  gap: 2px;
-  align-items: center;
-}
-.cal .day.attended .daynum {
-  opacity: 0.85;
-}
-.nudge .btn {
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
-/* ── Workout accordion ───────────────────────────────────────────────────── */
-.wk-head {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: var(--bg);
-  padding: 6px 0 10px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 10px;
-}
-.wk-head .elapsed {
-  font-variant-numeric: tabular-nums;
-  color: var(--dim);
-  font-size: 13px;
-}
-
-.ex {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  margin-bottom: 8px;
-  background: var(--surface);
-  overflow: hidden;
-}
-.ex.open {
-  border-color: #3a4654;
-  background: var(--surface);
-}
-
-.ex-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 56px;
-  padding: 8px 12px;
-  background: none;
-  border: 0;
-  text-align: left;
-}
-.ex-row .mark {
-  width: 22px;
-  flex: 0 0 22px;
-  text-align: center;
-  font-size: 15px;
-  color: var(--dim);
-}
-.ex-row .mark.done {
-  color: var(--good);
-}
-.ex-row .mark.part {
-  color: var(--accent);
-}
-.ex-row .nm {
-  flex: 1;
-  min-width: 0;
-  font-size: 15px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ex.open .ex-row .nm {
-  white-space: normal;
-  font-size: 17px;
-}
-.ex-row .sm {
-  font-size: 13px;
-  color: var(--dim);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.ex-body {
-  padding: 0 12px 12px;
-}
-.ex-last {
-  font-size: 13px;
-  color: var(--dim);
-  font-variant-numeric: tabular-nums;
-  margin: -2px 0 10px 32px;
-}
-
-.done-set {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 4px;
-  background: none;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  font-variant-numeric: tabular-nums;
-}
-.done-set .tick {
-  color: var(--good);
-  width: 20px;
-}
-.done-set .lbl {
-  flex: 1;
-  text-align: left;
-  color: var(--dim);
-  font-size: 13px;
-}
-.done-set .val {
-  font-weight: 600;
-}
-
-.cur-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 12px 0 6px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--dim);
-}
-.rest-chip {
-  min-height: 44px;
-  padding: 0 12px;
-  border-radius: 22px;
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  color: var(--dim);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-.cur-inputs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.do-set {
-  width: 100%;
-  min-height: 56px;
-  border-radius: 14px;
-  border: 0;
-  background: var(--good);
-  color: #04180f;
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-.do-set:active {
-  filter: brightness(0.92);
-}
-
-.rest-inline {
-  background: var(--surface-2);
-  border: 1px solid var(--accent);
-  border-radius: 14px;
-  padding: 10px 12px 12px;
-  margin-bottom: 10px;
-}
-.rest-inline.over {
-  border-color: var(--good);
-}
-.rest-inline .t {
-  font-size: 26px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-}
-.rest-inline.over .t {
-  color: var(--good);
-}
-.rest-track {
-  height: 5px;
-  background: var(--line);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 8px 0 10px;
-}
-.rest-fill {
-  height: 100%;
-  background: var(--accent);
-  transition: width 0.25s linear;
-}
-.rest-inline.over .rest-fill {
-  background: var(--good);
-}
-.rest-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.rest-actions button {
-  min-height: 44px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.ex-foot {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-.ex-foot button {
-  flex: 1;
-  min-height: 44px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  font-size: 14px;
-  font-weight: 600;
-}
-.ex-foot button.next {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.do-set:disabled {
-  background: var(--surface-2);
-  color: var(--dim);
-}
-.ex-foot button.drop {
-  flex: 0 0 auto;
-  padding: 0 14px;
-  color: var(--dim);
-  font-weight: 500;
-  background: none;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .rest .track {
+    transition: none;
+  }
 }

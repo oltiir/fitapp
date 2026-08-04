@@ -15,7 +15,9 @@ function Shell() {
   if (error) {
     return (
       <div className="screen">
-        <h1>Storage error</h1>
+        <header className="rail">
+          <h1 className="where">Storage error</h1>
+        </header>
         <p className="sub">{error}</p>
       </div>
     )

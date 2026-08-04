@@ -70,3 +70,16 @@ export function personalRecord(sessions: Session[], exerciseId: string): Persona
   }
   return best
 }
+
+/**
+ * Exercise ids whose all-time PR was set in this session — what the app credits
+ * you with on the day. Matched on session id rather than date so two sessions
+ * logged on one day cannot both claim the same record.
+ */
+export function recordsSetIn(sessions: Session[], sessionId: string): string[] {
+  const session = sessions.find((s) => s.id === sessionId)
+  if (!session) return []
+  return session.entries
+    .map((e) => e.exerciseId)
+    .filter((id) => personalRecord(sessions, id)?.sessionId === sessionId)
+}

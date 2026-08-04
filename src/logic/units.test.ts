@@ -6,6 +6,7 @@ import {
   paceSecPerKm,
   formatPace,
   formatDuration,
+  formatDaysAgo,
 } from './units'
 import type { Run, SetEntry } from '../types'
 
@@ -89,5 +90,25 @@ describe('pace', () => {
 
   it('formats zero as 0:00', () => {
     expect(formatDuration(0)).toBe('0:00')
+  })
+})
+
+describe('formatDaysAgo', () => {
+  it('says earlier today rather than 0d ago', () => {
+    expect(formatDaysAgo(0)).toBe('earlier today')
+  })
+
+  it('names yesterday', () => {
+    expect(formatDaysAgo(1)).toBe('yesterday')
+  })
+
+  it('counts days beyond that', () => {
+    expect(formatDaysAgo(9)).toBe('9 days ago')
+  })
+
+  // daysBetween can never go negative here, but a clock change must not produce
+  // "-1 days ago" on the session screen.
+  it('treats a negative gap as today', () => {
+    expect(formatDaysAgo(-1)).toBe('earlier today')
   })
 })
